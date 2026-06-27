@@ -1,3 +1,4 @@
+import Header from './components/Header';
 import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -8,7 +9,7 @@ const [isProtected, setIsProtected] = useState(false);
 return (
 <View style={styles.container}>
 
-<Text style={styles.title}>❤️ Check My Child</Text>
+<Header />
 
 <Text style={styles.subtitle}>
 Welcome to the first version of our app.
