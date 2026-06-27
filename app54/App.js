@@ -5,10 +5,10 @@ import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 export default function App() {
 const [lastCheckIn, setLastCheckIn] = useState ("Not checked in yet");
 const [isProtected, setIsProtected] = useState(false);
-
 return (
 <View style={styles.container}>
-<Text style={styles.title}>🩵 Check My Child</Text>
+
+<Text style={styles.title}>❤️ Check My Child</Text>
 
 <Text style={styles.subtitle}>
 Welcome to the first version of our app.
