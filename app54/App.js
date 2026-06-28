@@ -1,3 +1,5 @@
+import WelcomeScreen from './components/WelcomeScreen';
+import SetupForm from './components/SetupForm';
 import { scheduleTestReminderSequence } from './services/NotificationService';
 import * as Notifications from 'expo-notifications';
 import React, { useState } from 'react';
@@ -18,8 +20,16 @@ Notifications.setNotificationHandler({
 export default function App() {
   const [lastCheckIn, setLastCheckIn] = useState('Not checked in yet');
   const [isProtected, setIsProtected] = useState(false);
+  const [currentScreen, setCurrentScreen] = useState('welcome');
  
+const handleSetupSave = (data) => {
+  console.log(data);
 
+  Alert.alert(
+    'Safety Plan Saved',
+    `Welcome ${data.parentName}! Your safety plan has been saved.`
+  );
+};
   const handleCheckIn = () => {
     const now = new Date().toLocaleTimeString([], {
       hour: '2-digit',
@@ -35,6 +45,17 @@ export default function App() {
       'You have checked in successfully. Your child is protected today. 💚'
     );
   };
+  if (currentScreen === 'welcome') {
+  return <WelcomeScreen onBegin={() => setCurrentScreen('setup')} />;
+}
+
+if (currentScreen === 'setup') {
+  return (
+    <View style={styles.container}>
+      <SetupForm onSave={handleSetupSave} />
+    </View>
+  );
+}
 
   return (
     <View style={styles.container}>
