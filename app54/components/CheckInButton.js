@@ -7,18 +7,18 @@ export default function CheckInButton({ onCheckIn }) {
       style={styles.button}
       onPress={onCheckIn}
     >
-      <Text style={styles.buttonText}>💙 I'm OK</Text>
+      <Text style={styles.buttonText}> I'm OK</Text>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: '#0077CC',
+    backgroundColor: '#29cc00',
     paddingVertical: 15,
     paddingHorizontal: 35,
-    borderRadius: 12,
-    marginTop: 20,
+    borderRadius: 50,
+    marginTop: 5,
   },
   buttonText: {
     color: 'white',
