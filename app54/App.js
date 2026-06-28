@@ -27,7 +27,13 @@ const handleSetupSave = (data) => {
 
   Alert.alert(
     'Safety Plan Saved',
-    `Welcome ${data.parentName}! Your safety plan has been saved.`
+    `Welcome ${data.parentName}! Your safety plan has been saved.`,
+    [
+      {
+        text: 'Continue',
+        onPress: () => setCurrentScreen('home'),
+      },
+    ]
   );
 };
   const handleCheckIn = () => {
