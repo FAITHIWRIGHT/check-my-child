@@ -1,62 +1,103 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  StyleSheet,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 
 export default function SetupForm({ onSave }) {
   const [parentName, setParentName] = useState('');
   const [childName, setChildName] = useState('');
   const [contactName, setContactName] = useState('');
   const [contactPhone, setContactPhone] = useState('');
+  const [parentPhone, setParentPhone] = useState('');
 
   const handleSave = () => {
     onSave({
-      parentName,
-      childName,
-      contactName,
-      contactPhone,
-    });
+  parentName,
+  parentPhone,
+  childName,
+  contactName,
+  contactPhone,
+});
   };
 
   return (
-    <View style={styles.card}>
-      <Text style={styles.title}>Set Up Your Safety Plan</Text>
+  <KeyboardAvoidingView
+    style={styles.keyboardContainer}
+    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+  >
+    <ScrollView
+      contentContainerStyle={styles.scrollContainer}
+      keyboardShouldPersistTaps="handled"
+    >
+      <View style={styles.card}>
+        <Text style={styles.title}>Set Up Your Safety Plan</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Your name"
-        value={parentName}
-        onChangeText={setParentName}
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Your name"
+          value={parentName}
+          onChangeText={setParentName}
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Child's name"
-        value={childName}
-        onChangeText={setChildName}
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Your phone number"
+          value={parentPhone}
+          onChangeText={setParentPhone}
+          keyboardType="phone-pad"
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Trusted contact name"
-        value={contactName}
-        onChangeText={setContactName}
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Child's name"
+          value={childName}
+          onChangeText={setChildName}
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Trusted contact phone"
-        value={contactPhone}
-        onChangeText={setContactPhone}
-        keyboardType="phone-pad"
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Trusted contact name"
+          value={contactName}
+          onChangeText={setContactName}
+        />
 
-      <Pressable style={styles.button} onPress={handleSave}>
-        <Text style={styles.buttonText}>Save Safety Plan</Text>
-      </Pressable>
-    </View>
-  );
+        <TextInput
+          style={styles.input}
+          placeholder="Trusted contact phone"
+          value={contactPhone}
+          onChangeText={setContactPhone}
+          keyboardType="phone-pad"
+        />
+
+        <Pressable style={styles.button} onPress={handleSave}>
+          <Text style={styles.buttonText}>Save Safety Plan</Text>
+        </Pressable>
+      </View>
+    </ScrollView>
+  </KeyboardAvoidingView>
+);
 }
 
 const styles = StyleSheet.create({
+  keyboardContainer: {
+  flex: 1,
+  width: '100%',
+},
+
+scrollContainer: {
+  flexGrow: 1,
+  justifyContent: 'flex-start',
+  alignItems: 'center',
+  paddingTop: 40,
+  paddingBottom: 40,
+},
   card: {
     backgroundColor: 'white',
     padding: 20,
