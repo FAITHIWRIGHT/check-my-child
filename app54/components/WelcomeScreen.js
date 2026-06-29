@@ -1,10 +1,14 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Image } from 'react-native';
 
 export default function WelcomeScreen({ onBegin }) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Welcome to Check My Child 💚</Text>
+      <Image
+  source={require('../assets/logo.png')}
+  style={styles.logo}
+/>
 
       <Text style={styles.text}>
        Check My Child helps protect children who are unable to call for help themselves if a parent or sole carer is unable to ask for help. This includes young children and some children with disabilities or complex needs.
@@ -42,6 +46,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     color: '#444',
   },
+  logo: {
+  width: 170,
+  height: 170,
+  resizeMode: 'contain',
+  marginVertical: 25,
+},
   button: {
     backgroundColor: '#2E7D32',
     paddingVertical: 15,
