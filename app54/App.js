@@ -1,8 +1,9 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import WelcomeScreen from './components/WelcomeScreen';
 import SetupForm from './components/SetupForm';
 import { scheduleTestReminderSequence } from './services/NotificationService';
 import * as Notifications from 'expo-notifications';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { Alert, StyleSheet, View, Text } from 'react-native';
 
@@ -21,26 +22,67 @@ export default function App() {
   const [lastCheckIn, setLastCheckIn] = useState('Not checked in yet');
   const [isProtected, setIsProtected] = useState(false);
   const [currentScreen, setCurrentScreen] = useState('welcome');
+  useEffect(() => {
+  const checkSetupStatus = async () => {
+    const hasCompletedSetup = await AsyncStorage.getItem('hasCompletedSetup');
+
+    if (hasCompletedSetup === 'true') {
+      setCurrentScreen('home');
+    }
+  };
+
+  checkSetupStatus();
+}, []);
  
-const handleSetupSave = (data) => {
-  console.log(data);
+const handleSetupSave = async (data) => {
+  try {
+    await AsyncStorage.setItem('safetyPlan', JSON.stringify(data));
+    await AsyncStorage.setItem('hasCompletedSetup', 'true');
+
+    Alert.alert(
+      'Safety Plan Saved',
+      `Welcome ${data.parentName}! Your safety plan has been saved.`,
+      [
+        {
+          text: 'Continue',
+          onPress: () => setCurrentScreen('home'),
+        },
+      ]
+    );
+  } catch (error) {
+    Alert.alert(
+      'Save Error',
+      'Something went wrong while saving your Safety Plan.'
+    );
+  }
+};
+const resetApp = async () => {
+  await AsyncStorage.removeItem('safetyPlan');
+  await AsyncStorage.removeItem('hasCompletedSetup');
+
+  setCurrentScreen('welcome');
 
   Alert.alert(
-    'Safety Plan Saved',
-    `Welcome ${data.parentName}! Your safety plan has been saved.`,
-    [
-      {
-        text: 'Continue',
-        onPress: () => setCurrentScreen('home'),
-      },
-    ]
+    'App Reset',
+    'The saved Safety Plan has been cleared for testing.'
+  );
+};
+const checkSavedPlan = async () => {
+  const savedPlan = await AsyncStorage.getItem('safetyPlan');
+
+  Alert.alert(
+    'Saved Safety Plan',
+    savedPlan ? savedPlan : 'No Safety Plan found'
   );
 };
   const handleCheckIn = () => {
+    
+    
     const now = new Date().toLocaleTimeString([], {
       hour: '2-digit',
       minute: '2-digit',
     });
+    
 
     setLastCheckIn(`Today at ${now}`);
     setIsProtected(true);
@@ -82,12 +124,20 @@ if (currentScreen === 'setup') {
         isProtected={isProtected}
         lastCheckIn={lastCheckIn}
       />
+      <Text style={styles.resetText} onPress={resetApp}>
+    Developer Reset
+  </Text>
+  <Text style={styles.resetText} onPress={checkSavedPlan}>
+  Check Saved Plan
+</Text>
       </View>
 
       <StatusBar style="auto" />
     </View>
+    
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -113,4 +163,11 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
   },
+  resetText: {
+  marginTop: 20,
+  color: '#0077CC',
+  fontSize: 14,
+  textDecorationLine: 'underline',
+  fontWeight: '600',
+},
 });

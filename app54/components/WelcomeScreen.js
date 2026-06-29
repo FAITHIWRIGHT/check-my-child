@@ -7,16 +7,15 @@ export default function WelcomeScreen({ onBegin }) {
       <Text style={styles.title}>Welcome to Check My Child 💚</Text>
 
       <Text style={styles.text}>
-        Check My Child helps protect young children if a parent or sole carer
-        is unable to ask for help.
+       Check My Child helps protect children who are unable to call for help themselves if a parent or sole carer is unable to ask for help. This includes young children and some children with disabilities or complex needs.
       </Text>
 
       <Text style={styles.text}>
-        Before we begin, let's set up your family's safety plan.
+        Before we begin, let's create your family's Safety Plan.
       </Text>
 
       <Pressable style={styles.button} onPress={onBegin}>
-        <Text style={styles.buttonText}>Begin Setup</Text>
+        <Text style={styles.buttonText}>Create Your Safety Plan</Text>
       </Pressable>
     </View>
   );
