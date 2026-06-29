@@ -22,13 +22,20 @@ export default function App() {
   const [lastCheckIn, setLastCheckIn] = useState('Not checked in yet');
   const [isProtected, setIsProtected] = useState(false);
   const [currentScreen, setCurrentScreen] = useState('welcome');
+  const [safetyPlan, setSafetyPlan] = useState(null);
   useEffect(() => {
   const checkSetupStatus = async () => {
     const hasCompletedSetup = await AsyncStorage.getItem('hasCompletedSetup');
 
     if (hasCompletedSetup === 'true') {
-      setCurrentScreen('home');
-    }
+  const savedPlan = await AsyncStorage.getItem('safetyPlan');
+
+  if (savedPlan) {
+    setSafetyPlan(JSON.parse(savedPlan));
+  }
+
+  setCurrentScreen('home');
+}
   };
 
   checkSetupStatus();
@@ -38,6 +45,7 @@ const handleSetupSave = async (data) => {
   try {
     await AsyncStorage.setItem('safetyPlan', JSON.stringify(data));
     await AsyncStorage.setItem('hasCompletedSetup', 'true');
+    setSafetyPlan(data);
 
     Alert.alert(
       'Safety Plan Saved',
@@ -110,8 +118,10 @@ if (currentScreen === 'setup') {
       <Header />
 
       <Text style={styles.subtitle}>
-        Welcome to the first version of our app.
-      </Text>
+  {safetyPlan?.parentName
+    ? `Welcome, ${safetyPlan.parentName} 👋`
+    : 'Welcome to Check My Child'}
+</Text>
 
       <Text style={styles.message}>
         Complete your daily check-in to confirm you're safe. If a check-in is missed, your emergency plan can begin, helping ensure your child is not left without support.
