@@ -5,7 +5,7 @@ import { scheduleTestReminderSequence } from './services/NotificationService';
 import * as Notifications from 'expo-notifications';
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { Alert, StyleSheet, View, Text } from 'react-native';
+import { Alert, StyleSheet, View, Text, Image } from 'react-native';
 
 import Header from './components/Header';
 import StatusCard from './components/StatusCard';
@@ -26,24 +26,31 @@ export default function App() {
   const [isProtected, setIsProtected] = useState(false);
   const [currentScreen, setCurrentScreen] = useState('welcome');
   const [safetyPlan, setSafetyPlan] = useState(null);
+  const [showSplash, setShowSplash] = useState(true);
 
-  useEffect(() => {
-    const checkSetupStatus = async () => {
-      const hasCompletedSetup = await AsyncStorage.getItem('hasCompletedSetup');
+ useEffect(() => {
+  const checkSetupStatus = async () => {
+    const hasCompletedSetup = await AsyncStorage.getItem('hasCompletedSetup');
 
-      if (hasCompletedSetup === 'true') {
-        const savedPlan = await AsyncStorage.getItem('safetyPlan');
+    if (hasCompletedSetup === 'true') {
+      const savedPlan = await AsyncStorage.getItem('safetyPlan');
 
-        if (savedPlan) {
-          setSafetyPlan(JSON.parse(savedPlan));
-        }
-
-        setCurrentScreen('home');
+      if (savedPlan) {
+        setSafetyPlan(JSON.parse(savedPlan));
       }
-    };
 
-    checkSetupStatus();
-  }, []);
+      setCurrentScreen('home');
+    }
+  };
+
+  checkSetupStatus();
+
+  const timer = setTimeout(() => {
+    setShowSplash(false);
+  }, 2000);
+
+  return () => clearTimeout(timer);
+}, []);
 
   const handleSetupSave = async (data) => {
     try {
@@ -106,7 +113,16 @@ export default function App() {
       'You have checked in successfully. Your child is protected today. 💚'
     );
   };
-
+if (showSplash) {
+  return (
+    <View style={styles.splashContainer}>
+      <Image
+        source={require('./assets/logo.png')}
+        style={styles.splashLogo}
+      />
+    </View>
+  );
+}
   if (currentScreen === 'welcome') {
     return <WelcomeScreen onBegin={() => setCurrentScreen('setup')} />;
   }
@@ -197,9 +213,19 @@ const styles = StyleSheet.create({
   },
   resetText: {
     marginTop: 20,
-    color: '#0077CC',
+    color: '#096fb8',
     fontSize: 14,
     textDecorationLine: 'underline',
     fontWeight: '600',
+  },
+  splashContainer: {
+    flex: 1,
+    backgroundColor: '#EAF7FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  splashLogo: {
+    width: 200,
+    height: 200,
   },
 });
