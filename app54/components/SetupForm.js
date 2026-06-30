@@ -8,11 +8,12 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Button,
 } from 'react-native';
 
 export default function SetupForm({ onSave }) {
   const [parentName, setParentName] = useState('');
-  const [childName, setChildName] = useState('');
+  const [children, setChildren] = useState(['']);
   const [contactName, setContactName] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [parentPhone, setParentPhone] = useState('');
@@ -21,7 +22,7 @@ export default function SetupForm({ onSave }) {
     onSave({
   parentName,
   parentPhone,
-  childName,
+  children,
   contactName,
   contactPhone,
 });
@@ -54,12 +55,37 @@ export default function SetupForm({ onSave }) {
           keyboardType="phone-pad"
         />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Child's name"
-          value={childName}
-          onChangeText={setChildName}
-        />
+        {children.map((child, index) => (
+  <View key={index} style={styles.childContainer}>
+    <TextInput
+      placeholder={`Child ${index + 1} Name`}
+      value={child}
+      onChangeText={(text) => {
+        const updatedChildren = [...children];
+        updatedChildren[index] = text;
+        setChildren(updatedChildren);
+      }}
+      style={styles.input}
+    />
+
+    {children.length > 1 && index > 0 && (
+      <Pressable
+        style={styles.removeButton}
+        onPress={() => {
+          const updatedChildren = children.filter((_, i) => i !== index);
+          setChildren(updatedChildren);
+        }}
+      >
+        <Text style={styles.removeButtonText}>Remove Child</Text>
+      </Pressable>
+    )}
+  </View>
+))}
+
+<Button
+  title="+ Add Another Child"
+  onPress={() => setChildren([...children, ''])}
+/>
 
         <TextInput
           style={styles.input}
@@ -119,6 +145,21 @@ scrollContainer: {
     marginBottom: 10,
     fontSize: 16,
   },
+  childContainer: {
+  width: '100%',
+  marginBottom: 10,
+},
+
+removeButton: {
+  alignSelf: 'flex-end',
+  marginTop: -5,
+  marginBottom: 10,
+},
+
+removeButtonText: {
+  color: '#080101',
+  fontWeight: '600',
+},
   button: {
     backgroundColor: '#2E7D32',
     paddingVertical: 14,
