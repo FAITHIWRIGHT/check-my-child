@@ -13,7 +13,13 @@ import {
 
 export default function SetupForm({ onSave }) {
   const [parentName, setParentName] = useState('');
-  const [children, setChildren] = useState(['']);
+  const [children, setChildren] = useState([
+  {
+    name: '',
+    dateOfBirth: '',
+    notes: '',
+  },
+]);
   const [contactName, setContactName] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [parentPhone, setParentPhone] = useState('');
@@ -57,15 +63,40 @@ export default function SetupForm({ onSave }) {
 
         {children.map((child, index) => (
   <View key={index} style={styles.childContainer}>
+    <Text style={styles.childTitle}>Child {index + 1}</Text>
+
     <TextInput
-      placeholder={`Child ${index + 1} Name`}
-      value={child}
+      placeholder="Child's name"
+      value={child.name}
       onChangeText={(text) => {
         const updatedChildren = [...children];
-        updatedChildren[index] = text;
+        updatedChildren[index].name = text;
         setChildren(updatedChildren);
       }}
       style={styles.input}
+    />
+
+    <TextInput
+      placeholder="Date of birth"
+      value={child.dateOfBirth}
+      onChangeText={(text) => {
+        const updatedChildren = [...children];
+        updatedChildren[index].dateOfBirth = text;
+        setChildren(updatedChildren);
+      }}
+      style={styles.input}
+    />
+
+    <TextInput
+      placeholder="Optional notes"
+      value={child.notes}
+      onChangeText={(text) => {
+        const updatedChildren = [...children];
+        updatedChildren[index].notes = text;
+        setChildren(updatedChildren);
+      }}
+      style={styles.notesInput}
+      multiline
     />
 
     {children.length > 1 && index > 0 && (
@@ -84,7 +115,7 @@ export default function SetupForm({ onSave }) {
 
 <Button
   title="+ Add Another Child"
-  onPress={() => setChildren([...children, ''])}
+  onPress={() => setChildren([...children, { name: '', dateOfBirth: '', notes: '' }])}
 />
 
         <TextInput
@@ -123,6 +154,24 @@ scrollContainer: {
   alignItems: 'center',
   paddingTop: 40,
   paddingBottom: 40,
+},
+childTitle: {
+  width: '100%',
+  fontSize: 16,
+  fontWeight: 'bold',
+  color: '#2E7D32',
+  marginBottom: 8,
+},
+
+notesInput: {
+  width: '100%',
+  backgroundColor: '#F2F2F2',
+  padding: 12,
+  borderRadius: 10,
+  marginBottom: 10,
+  fontSize: 16,
+  minHeight: 80,
+  textAlignVertical: 'top',
 },
   card: {
     backgroundColor: 'white',
