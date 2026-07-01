@@ -97,7 +97,33 @@ export default function App() {
       savedPlan ? savedPlan : 'No Safety Plan found'
     );
   };
+const testSafetyPlanAlert = () => {
+  if (!safetyPlan) {
+    Alert.alert(
+      'No Safety Plan Found',
+      'Please create a Safety Plan before testing your alert message.'
+    );
+    return;
+  }
 
+  const firstChildName =
+  safetyPlan.children && safetyPlan.children.length > 0
+    ? safetyPlan.children[0].name
+    : 'your child';
+
+  Alert.alert(
+    'TEST Check My Child Alert',
+    `Check My Child Alert.
+
+${safetyPlan.parentName} has not completed today's check-in.
+
+This could mean ${firstChildName} may need your help.
+
+Please try to contact ${safetyPlan.parentName} first. If you cannot reach them, follow the emergency plan they have shared with you.
+
+This is a TEST alert. No emergency services have been contacted.`
+  );
+};
   const handleCheckIn = () => {
     const now = new Date().toLocaleTimeString([], {
       hour: '2-digit',
@@ -106,7 +132,7 @@ export default function App() {
 
     setLastCheckIn(`Today at ${now}`);
     setIsProtected(true);
-    scheduleTestReminderSequence();
+    scheduleTestReminderSequence(safetyPlan);
 
     Alert.alert(
       'Check-In Successful',
@@ -172,6 +198,12 @@ if (showSplash) {
         >
           View Safety Plan
         </Text>
+        <Text
+  style={styles.resetText}
+  onPress={testSafetyPlanAlert}
+>
+  Test Safety Plan Alert
+</Text>
 
         <Text style={styles.resetText} onPress={resetApp}>
           Developer Reset
@@ -220,12 +252,12 @@ const styles = StyleSheet.create({
   },
   splashContainer: {
     flex: 1,
-    backgroundColor: '#EAF7FF',
+    backgroundColor: '#095e92',
     alignItems: 'center',
     justifyContent: 'center',
   },
   splashLogo: {
-    width: 200,
-    height: 200,
+    width: 350,
+    height: 350,
   },
 });
