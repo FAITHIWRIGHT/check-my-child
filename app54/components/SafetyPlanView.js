@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 
-export default function SafetyPlanView({ safetyPlan, onBack }) {
+export default function SafetyPlanView({ safetyPlan, onBack, onEdit }) {
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
@@ -26,6 +27,9 @@ export default function SafetyPlanView({ safetyPlan, onBack }) {
         <Text style={styles.sectionTitle}>Trusted Contact</Text>
         <Text style={styles.text}>Name: {safetyPlan.contactName}</Text>
         <Text style={styles.text}>Phone: {safetyPlan.contactPhone}</Text>
+<Pressable style={styles.button} onPress={onEdit}>
+  <Text style={styles.buttonText}>Edit Safety Plan</Text>
+</Pressable>
 
         <Pressable style={styles.button} onPress={onBack}>
           <Text style={styles.buttonText}>Back to Home</Text>

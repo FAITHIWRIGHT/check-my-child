@@ -9,30 +9,57 @@ import {
   KeyboardAvoidingView,
   Platform,
   Button,
+  Alert,
 } from 'react-native';
 
-export default function SetupForm({ onSave }) {
-  const [parentName, setParentName] = useState('');
-  const [children, setChildren] = useState([
-  {
-    name: '',
-    dateOfBirth: '',
-    notes: '',
-  },
-]);
-  const [contactName, setContactName] = useState('');
-  const [contactPhone, setContactPhone] = useState('');
-  const [parentPhone, setParentPhone] = useState('');
+export default function SetupForm({ onSave, existingPlan }) {
+  const [parentName, setParentName] = useState(existingPlan?.parentName || '');
+
+  const [children, setChildren] = useState(
+  existingPlan?.children || [
+    {
+      name: '',
+      dateOfBirth: '',
+      notes: '',
+    },
+  ]
+);
+
+  const [contactName, setContactName] = useState(existingPlan?.contactName || '');
+
+  const [contactPhone, setContactPhone] = useState(existingPlan?.contactPhone || '');
+
+  const [parentPhone, setParentPhone] = useState(existingPlan?.parentPhone || '');
+
 
   const handleSave = () => {
-    onSave({
-  parentName,
-  parentPhone,
-  children,
-  contactName,
-  contactPhone,
-});
-  };
+  if (
+    parentName.trim() === '' ||
+    parentPhone.trim() === '' ||
+    contactName.trim() === '' ||
+    contactPhone.trim() === '' ||
+    children.length === 0 ||
+    children.some(
+      child =>
+        child.name.trim() === '' ||
+        child.dateOfBirth.trim() === ''
+    )
+  ) {
+    Alert.alert(
+      'Missing Information',
+      'Please complete all required fields marked with * before saving your Safety Plan.'
+    );
+    return;
+  }
+
+  onSave({
+    parentName,
+    parentPhone,
+    children,
+    contactName,
+    contactPhone,
+  });
+};
 
   return (
   <KeyboardAvoidingView
@@ -44,18 +71,19 @@ export default function SetupForm({ onSave }) {
       keyboardShouldPersistTaps="handled"
     >
       <View style={styles.card}>
-        <Text style={styles.title}>Set Up Your Safety Plan</Text>
+        <Text style={styles.title}>Set Up Your Safety Plan
+        </Text>
 
         <TextInput
           style={styles.input}
-          placeholder="Your name"
+          placeholder="Your name*"
           value={parentName}
           onChangeText={setParentName}
         />
 
         <TextInput
           style={styles.input}
-          placeholder="Your phone number"
+          placeholder="Your phone number*"
           value={parentPhone}
           onChangeText={setParentPhone}
           keyboardType="phone-pad"
@@ -66,7 +94,7 @@ export default function SetupForm({ onSave }) {
     <Text style={styles.childTitle}>Child {index + 1}</Text>
 
     <TextInput
-      placeholder="Child's name"
+      placeholder="Child's name*"
       value={child.name}
       onChangeText={(text) => {
         const updatedChildren = [...children];
@@ -77,7 +105,7 @@ export default function SetupForm({ onSave }) {
     />
 
     <TextInput
-      placeholder="Date of birth"
+      placeholder="Date of birth*"
       value={child.dateOfBirth}
       onChangeText={(text) => {
         const updatedChildren = [...children];
@@ -88,7 +116,7 @@ export default function SetupForm({ onSave }) {
     />
 
     <TextInput
-      placeholder="Optional notes"
+      placeholder="Optional notes (e.g. medical needs, spare key/home access info)"
       value={child.notes}
       onChangeText={(text) => {
         const updatedChildren = [...children];
@@ -120,14 +148,14 @@ export default function SetupForm({ onSave }) {
 
         <TextInput
           style={styles.input}
-          placeholder="Trusted contact name"
+          placeholder="Trusted contact name*"
           value={contactName}
           onChangeText={setContactName}
         />
 
         <TextInput
           style={styles.input}
-          placeholder="Trusted contact phone"
+          placeholder="Trusted contact phone*"
           value={contactPhone}
           onChangeText={setContactPhone}
           keyboardType="phone-pad"

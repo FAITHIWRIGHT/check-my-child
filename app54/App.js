@@ -156,19 +156,21 @@ if (showSplash) {
   if (currentScreen === 'setup') {
     return (
       <View style={styles.container}>
-        <SetupForm onSave={handleSetupSave} />
+        <SetupForm onSave={handleSetupSave} existingPlan={safetyPlan} />
+
       </View>
     );
   }
 
   if (currentScreen === 'safetyPlan') {
-    return (
-      <SafetyPlanView
-        safetyPlan={safetyPlan}
-        onBack={() => setCurrentScreen('home')}
-      />
-    );
-  }
+  return (
+    <SafetyPlanView
+      safetyPlan={safetyPlan}
+      onBack={() => setCurrentScreen('home')}
+      onEdit={() => setCurrentScreen('setup')}
+    />
+  );
+}
 
   return (
     <View style={styles.container}>

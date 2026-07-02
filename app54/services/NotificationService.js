@@ -45,7 +45,7 @@ const childNotes = firstChild?.notes || 'No notes added';
   await Notifications.scheduleNotificationAsync({
     content: {
       title: 'Check My Child Alert',
-      body: `Emergency test: ${parentName} has not completed today's check-in. This could mean ${childName} may need your help. Date of birth: ${childDateOfBirth}. Notes: ${childNotes}. Please try to contact ${parentName} first. If you cannot reach them, follow the emergency plan they have shared with you.`,
+      body: `Hi ${trustedContactName}. Emergency test: ${parentName} has not completed today's check-in. This could mean ${childName} may need your help. Date of birth: ${childDateOfBirth}. Notes: ${childNotes}. Please try to contact ${parentName} immediately. If you cannot reach ${parentName}, please go and check on ${childName} as soon as possible.`,
       sound: true,
     },
     trigger: {

@@ -4,7 +4,7 @@ import { Text, StyleSheet } from 'react-native';
 export default function Header() {
   return (
     <Text style={styles.title}>
-      ❤️ Check My Child
+      Check My Child 💚 
     </Text>
   );
 }
