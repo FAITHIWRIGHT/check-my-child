@@ -1,3 +1,5 @@
+import { db } from './firebase/firebaseconfig';
+import { collection, addDoc } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import WelcomeScreen from './components/WelcomeScreen';
 import SetupForm from './components/SetupForm';
@@ -55,8 +57,14 @@ export default function App() {
   const handleSetupSave = async (data) => {
     try {
       await AsyncStorage.setItem('safetyPlan', JSON.stringify(data));
-      await AsyncStorage.setItem('hasCompletedSetup', 'true');
-      setSafetyPlan(data);
+await AsyncStorage.setItem('hasCompletedSetup', 'true');
+
+await addDoc(collection(db, 'safetyPlans'), {
+  ...data,
+  createdAt: new Date().toISOString(),
+});
+
+setSafetyPlan(data);
 
       Alert.alert(
         'Safety Plan Saved',
@@ -69,11 +77,13 @@ export default function App() {
         ]
       );
     } catch (error) {
-      Alert.alert(
-        'Save Error',
-        'Something went wrong while saving your Safety Plan.'
-      );
-    }
+  console.log(error);
+
+  Alert.alert(
+    'Save Error',
+    error.message
+  );
+}
   };
 
   const resetApp = async () => {
