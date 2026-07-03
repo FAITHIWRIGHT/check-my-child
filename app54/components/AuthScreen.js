@@ -8,7 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../firebase/firebaseConfig';
+import { auth } from '../firebase/firebaseconfig';
 
 export default function AuthScreen({ onSignedIn }) {
   const [email, setEmail] = useState('');

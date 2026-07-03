@@ -13,6 +13,7 @@ import Header from './components/Header';
 import StatusCard from './components/StatusCard';
 import CheckInButton from './components/CheckInButton';
 import SafetyPlanView from './components/SafetyPlanView';
+import AuthScreen from './components/AuthScreen';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -29,6 +30,7 @@ export default function App() {
   const [currentScreen, setCurrentScreen] = useState('welcome');
   const [safetyPlan, setSafetyPlan] = useState(null);
   const [showSplash, setShowSplash] = useState(true);
+  const [user, setUser] = useState(null);
 
  useEffect(() => {
   const checkSetupStatus = async () => {
@@ -160,9 +162,18 @@ if (showSplash) {
   );
 }
   if (currentScreen === 'welcome') {
-    return <WelcomeScreen onBegin={() => setCurrentScreen('setup')} />;
-  }
-
+  return <WelcomeScreen onBegin={() => setCurrentScreen('auth')} />;
+}
+if (currentScreen === 'auth') {
+  return (
+    <AuthScreen
+      onSignedIn={(signedInUser) => {
+        setUser(signedInUser);
+        setCurrentScreen('setup');
+      }}
+    />
+  );
+}
   if (currentScreen === 'setup') {
     return (
       <View style={styles.container}>
