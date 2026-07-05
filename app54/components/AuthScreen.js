@@ -7,7 +7,10 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from 'firebase/auth';
 import { auth } from '../firebase/firebaseconfig';
 
 export default function AuthScreen({ onSignedIn }) {
@@ -32,6 +35,26 @@ export default function AuthScreen({ onSignedIn }) {
       onSignedIn(userCredential.user);
     } catch (error) {
       Alert.alert('Sign Up Error', error.message);
+    }
+  };
+    const handleLogin = async () => {
+    if (email.trim() === '' || password.trim() === '') {
+      Alert.alert('Missing Information', 'Please enter your email and password.');
+      return;
+    }
+
+    try {
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email.trim(),
+        password
+      );
+
+      Alert.alert('Logged In', 'Welcome back to Check My Child.');
+
+      onSignedIn(userCredential.user);
+    } catch (error) {
+      Alert.alert('Login Error', error.message);
     }
   };
 
@@ -59,6 +82,12 @@ export default function AuthScreen({ onSignedIn }) {
       <Pressable style={styles.button} onPress={handleSignUp}>
         <Text style={styles.buttonText}>Create Account</Text>
       </Pressable>
+      <Pressable
+  style={[styles.button, { marginTop: 12, backgroundColor: '#096fb8' }]}
+  onPress={handleLogin}
+>
+  <Text style={styles.buttonText}>Log In</Text>
+</Pressable>
     </View>
   );
 }
