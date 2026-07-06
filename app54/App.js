@@ -103,10 +103,27 @@ useEffect(() => {
       await AsyncStorage.setItem('safetyPlan', JSON.stringify(data));
 await AsyncStorage.setItem('hasCompletedSetup', 'true');
 
+const currentUser = auth.currentUser;
+
+if (!currentUser) {
+  await AsyncStorage.removeItem('safetyPlan');
+  await AsyncStorage.removeItem('hasCompletedSetup');
+
+  setUser(null);
+  setSafetyPlan(null);
+  setCurrentScreen('auth');
+
+  Alert.alert(
+    'Login Required',
+    'Please log in before saving your Safety Plan.'
+  );
+  return;
+}
+
 await addDoc(collection(db, 'safetyPlans'), {
   ...data,
-  userId: user?.uid,
-  userEmail: user?.email,
+  userId: currentUser.uid,
+  userEmail: currentUser.email,
   createdAt: new Date().toISOString(),
 });
 
