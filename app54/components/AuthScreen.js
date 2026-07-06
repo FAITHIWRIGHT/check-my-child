@@ -10,6 +10,7 @@ import {
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 import { auth } from '../firebase/firebaseconfig';
 
@@ -57,6 +58,26 @@ export default function AuthScreen({ onSignedIn }) {
       Alert.alert('Login Error', error.message);
     }
   };
+  const handleForgotPassword = async () => {
+  if (email.trim() === '') {
+    Alert.alert(
+      'Email Required',
+      'Please enter your email address first, then tap Forgot Password.'
+    );
+    return;
+  }
+
+  try {
+    await sendPasswordResetEmail(auth, email.trim());
+
+    Alert.alert(
+      'Password Reset Sent',
+      'Please check your email for a password reset link.'
+    );
+  } catch (error) {
+    Alert.alert('Password Reset Error', error.message);
+  }
+};
 
   return (
     <View style={styles.container}>
@@ -87,6 +108,9 @@ export default function AuthScreen({ onSignedIn }) {
   onPress={handleLogin}
 >
   <Text style={styles.buttonText}>Log In</Text>
+</Pressable>
+<Pressable onPress={handleForgotPassword}>
+  <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
 </Pressable>
     </View>
   );
@@ -127,4 +151,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
+  forgotPasswordText: {
+  marginTop: 15,
+  color: '#096fb8',
+  fontSize: 15,
+  textDecorationLine: 'underline',
+  fontWeight: '600',
+},
 });
