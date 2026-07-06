@@ -7,6 +7,9 @@ import {
   query,
   where,
   getDocs,
+  serverTimestamp,
+  orderBy,
+  limit,
 } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import WelcomeScreen from './components/WelcomeScreen';
@@ -88,12 +91,49 @@ const loadSafetyPlanForUser = async (signedInUser) => {
     setCurrentScreen('setup');
   }
 };
+const loadTodayCheckInForUser = async (signedInUser) => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+
+    const q = query(
+  collection(db, 'checkIns'),
+  where('userId', '==', signedInUser.uid),
+  where('checkedInDate', '==', today)
+);
+
+    const querySnapshot = await getDocs(q);
+    console.log('Today check-in search results:', querySnapshot.empty);
+
+    if (!querySnapshot.empty) {
+      const checkInData = querySnapshot.docs[0].data();
+
+      setIsProtected(true);
+
+      if (checkInData.checkedInAt?.toDate) {
+        const checkInTime = checkInData.checkedInAt.toDate().toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+
+        setLastCheckIn(`Today at ${checkInTime}`);
+      } else {
+        setLastCheckIn('Checked in today');
+      }
+    } else {
+      setIsProtected(false);
+      setLastCheckIn('Not checked in yet');
+    }
+  } catch (error) {
+    console.log(error);
+  }
+};
 useEffect(() => {
   const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
     if (currentUser) {
-      setUser(currentUser);
-      await loadSafetyPlanForUser(currentUser);
-    }
+  setUser(currentUser);
+  await loadSafetyPlanForUser(currentUser);
+  await loadTodayCheckInForUser(currentUser);
+}
   });
 
   return unsubscribe;
@@ -214,21 +254,50 @@ Please try to contact ${safetyPlan.parentName} first. If you cannot reach them, 
 This is a TEST alert. No emergency services have been contacted.`
   );
 };
-  const handleCheckIn = () => {
-    const now = new Date().toLocaleTimeString([], {
+ const handleCheckIn = async () => {
+  try {
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+      Alert.alert(
+        'Login Required',
+        'Please log in before completing your daily check-in.'
+      );
+      setCurrentScreen('auth');
+      return;
+    }
+
+    const now = new Date();
+
+    await addDoc(collection(db, 'checkIns'), {
+      userId: currentUser.uid,
+      userEmail: currentUser.email,
+      checkedInAt: serverTimestamp(),
+      checkedInDate: now.toISOString().split('T')[0],
+      status: 'checked_in',
+    });
+
+    const displayTime = now.toLocaleTimeString([], {
       hour: '2-digit',
       minute: '2-digit',
     });
 
-    setLastCheckIn(`Today at ${now}`);
+    setLastCheckIn(`Today at ${displayTime}`);
     setIsProtected(true);
-    scheduleTestReminderSequence(safetyPlan);
 
     Alert.alert(
       'Check-In Successful',
       'You have checked in successfully. Your child is protected today. 💚'
     );
-  };
+  } catch (error) {
+    console.log(error);
+
+    Alert.alert(
+      'Check-In Error',
+      error.message
+    );
+  }
+};
 if (showSplash) {
   return (
     <View style={styles.splashContainer}>
