@@ -1,5 +1,13 @@
+import { auth } from './firebase/firebaseconfig';
+import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { db } from './firebase/firebaseconfig';
-import { collection, addDoc } from 'firebase/firestore';
+import {
+  collection,
+  addDoc,
+  query,
+  where,
+  getDocs,
+} from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import WelcomeScreen from './components/WelcomeScreen';
 import SetupForm from './components/SetupForm';
@@ -55,7 +63,41 @@ export default function App() {
 
   return () => clearTimeout(timer);
 }, []);
+const loadSafetyPlanForUser = async (signedInUser) => {
+  try {
+    const q = query(
+      collection(db, 'safetyPlans'),
+      where('userId', '==', signedInUser.uid)
+    );
 
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+      const planData = querySnapshot.docs[0].data();
+
+      setSafetyPlan(planData);
+      await AsyncStorage.setItem('safetyPlan', JSON.stringify(planData));
+      await AsyncStorage.setItem('hasCompletedSetup', 'true');
+
+      setCurrentScreen('home');
+    } else {
+      setCurrentScreen('setup');
+    }
+  } catch (error) {
+    Alert.alert('Load Error', error.message);
+    setCurrentScreen('setup');
+  }
+};
+useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    if (currentUser) {
+      setUser(currentUser);
+      await loadSafetyPlanForUser(currentUser);
+    }
+  });
+
+  return unsubscribe;
+}, []);
   const handleSetupSave = async (data) => {
     try {
       await AsyncStorage.setItem('safetyPlan', JSON.stringify(data));
@@ -63,6 +105,8 @@ await AsyncStorage.setItem('hasCompletedSetup', 'true');
 
 await addDoc(collection(db, 'safetyPlans'), {
   ...data,
+  userId: user?.uid,
+  userEmail: user?.email,
   createdAt: new Date().toISOString(),
 });
 
@@ -87,7 +131,24 @@ setSafetyPlan(data);
   );
 }
   };
+const handleLogout = async () => {
+  try {
+    await signOut(auth);
 
+    await AsyncStorage.removeItem('safetyPlan');
+    await AsyncStorage.removeItem('hasCompletedSetup');
+
+    setUser(null);
+    setSafetyPlan(null);
+    setIsProtected(false);
+    setLastCheckIn('Not checked in yet');
+    setCurrentScreen('auth');
+
+    Alert.alert('Logged Out', 'You have been logged out successfully.');
+  } catch (error) {
+    Alert.alert('Logout Error', error.message);
+  }
+};
   const resetApp = async () => {
     await AsyncStorage.removeItem('safetyPlan');
     await AsyncStorage.removeItem('hasCompletedSetup');
@@ -167,11 +228,11 @@ if (showSplash) {
 if (currentScreen === 'auth') {
   return (
     <AuthScreen
-      onSignedIn={(signedInUser) => {
-        setUser(signedInUser);
-        setCurrentScreen('setup');
-      }}
-    />
+  onSignedIn={(signedInUser) => {
+    setUser(signedInUser);
+    loadSafetyPlanForUser(signedInUser);
+  }}
+/>
   );
 }
   if (currentScreen === 'setup') {
@@ -228,6 +289,12 @@ if (currentScreen === 'auth') {
   Test Safety Plan Alert
 </Text>
 
+<Text
+  style={styles.resetText}
+  onPress={handleLogout}
+>
+  Log Out
+</Text>
         <Text style={styles.resetText} onPress={resetApp}>
           Developer Reset
         </Text>
