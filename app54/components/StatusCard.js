@@ -1,11 +1,10 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 export default function StatusCard({ isProtected, lastCheckIn }) {
   return (
     <View style={styles.card}>
       <Text style={styles.status}>
-        {isProtected ? '🟢 Protected Today' : '🔴 Not Protected'}
+        {isProtected ? '🟢 Check-In Complete' : '🔴 Check-In Required'}
       </Text>
 
       <Text style={styles.label}>Last Check-In:</Text>
