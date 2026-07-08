@@ -1,32 +1,58 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * const {onCall} = require("firebase-functions/v2/https");
- * const {onDocumentWritten} = require("firebase-functions/v2/firestore");
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { defineSecret } = require("firebase-functions/params");
+const twilio = require("twilio");
 
-const {setGlobalOptions} = require("firebase-functions");
-const {onRequest} = require("firebase-functions/https");
-const logger = require("firebase-functions/logger");
+const TWILIO_ACCOUNT_SID = defineSecret("TWILIO_ACCOUNT_SID");
+const TWILIO_AUTH_TOKEN = defineSecret("TWILIO_AUTH_TOKEN");
+const TWILIO_PHONE_NUMBER = defineSecret("TWILIO_PHONE_NUMBER");
 
-// For cost control, you can set the maximum number of containers that can be
-// running at the same time. This helps mitigate the impact of unexpected
-// traffic spikes by instead downgrading performance. This limit is a
-// per-function limit. You can override the limit for each function using the
-// `maxInstances` option in the function's options, e.g.
-// `onRequest({ maxInstances: 5 }, (req, res) => { ... })`.
-// NOTE: setGlobalOptions does not apply to functions using the v1 API. V1
-// functions should each use functions.runWith({ maxInstances: 10 }) instead.
-// In the v1 API, each function can only serve one request per container, so
-// this will be the maximum concurrent request count.
-setGlobalOptions({ maxInstances: 10 });
+exports.sendTestSafetyPlanSms = onCall(
+  {
+    secrets: [
+      TWILIO_ACCOUNT_SID,
+      TWILIO_AUTH_TOKEN,
+      TWILIO_PHONE_NUMBER,
+    ],
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "You must be logged in to send a test alert."
+      );
+    }
 
-// Create and deploy your first functions
-// https://firebase.google.com/docs/functions/get-started
+    const { to, parentName, childName } = request.data;
 
-// exports.helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+    if (!to || !parentName || !childName) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Missing trusted contact phone number, parent name, or child name."
+      );
+    }
+
+    const client = twilio(
+      TWILIO_ACCOUNT_SID.value(),
+      TWILIO_AUTH_TOKEN.value()
+    );
+
+    const message = await client.messages.create({
+      body: `TEST Check My Child Alert.
+
+${parentName} has not completed today's check-in.
+
+This could mean ${childName} may need your help.
+
+Please try to contact ${parentName} first. If you cannot reach them, follow the emergency plan they have shared with you.
+
+This is a TEST alert. No emergency services have been contacted.`,
+      from: TWILIO_PHONE_NUMBER.value(),
+      to,
+    });
+
+    return {
+      success: true,
+      messageSid: message.sid,
+    };
+  }
+);
