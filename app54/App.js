@@ -1,30 +1,26 @@
-import { auth } from './firebase/firebaseconfig';
-import { signOut, onAuthStateChanged } from 'firebase/auth';
-import { db } from './firebase/firebaseconfig';
-import {
-  collection,
-  addDoc,
-  query,
-  where,
-  getDocs,
-  serverTimestamp,
-  orderBy,
-  limit,
-} from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import WelcomeScreen from './components/WelcomeScreen';
-import SetupForm from './components/SetupForm';
-import { scheduleTestReminderSequence } from './services/NotificationService';
 import * as Notifications from 'expo-notifications';
-import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { Alert, StyleSheet, View, Text, Image } from 'react-native';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import {
+  addDoc,
+  collection,
+  getDocs,
+  query,
+  serverTimestamp,
+  where
+} from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import { Alert, Image, StyleSheet, Text, View } from 'react-native';
+import SetupForm from './components/SetupForm';
+import WelcomeScreen from './components/WelcomeScreen';
+import { auth, db } from './firebase/firebaseconfig';
 
-import Header from './components/Header';
-import StatusCard from './components/StatusCard';
-import CheckInButton from './components/CheckInButton';
-import SafetyPlanView from './components/SafetyPlanView';
 import AuthScreen from './components/AuthScreen';
+import CheckInButton from './components/CheckInButton';
+import Header from './components/Header';
+import SafetyPlanView from './components/SafetyPlanView';
+import StatusCard from './components/StatusCard';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -44,22 +40,7 @@ export default function App() {
   const [user, setUser] = useState(null);
 
  useEffect(() => {
-  const checkSetupStatus = async () => {
-    const hasCompletedSetup = await AsyncStorage.getItem('hasCompletedSetup');
-
-    if (hasCompletedSetup === 'true') {
-      const savedPlan = await AsyncStorage.getItem('safetyPlan');
-
-      if (savedPlan) {
-        setSafetyPlan(JSON.parse(savedPlan));
-      }
-
-      setCurrentScreen('home');
-    }
-  };
-
-  checkSetupStatus();
-
+  
   const timer = setTimeout(() => {
     setShowSplash(false);
   }, 2000);
@@ -129,10 +110,11 @@ const loadTodayCheckInForUser = async (signedInUser) => {
 };
 useEffect(() => {
   const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-    if (currentUser) {
+   if (currentUser) {
   setUser(currentUser);
+
   await loadSafetyPlanForUser(currentUser);
-  await loadTodayCheckInForUser(currentUser);
+await loadTodayCheckInForUser(currentUser);
 }
   });
 
