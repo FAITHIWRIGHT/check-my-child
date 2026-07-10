@@ -37,18 +37,18 @@ exports.sendTestSafetyPlanSms = onCall(
     );
 
     const message = await client.messages.create({
-      body: `TEST Check My Child Alert.
+  body: `TEST Check My Child Alert.
 
 ${parentName} has not completed today's check-in.
 
-This could mean ${childName} may need your help.
+This could mean ${parentName} and ${childName} need your help.
 
-Please try to contact ${parentName} first. If you cannot reach them, follow the emergency plan they have shared with you.
+Please try to contact ${parentName} first. If you cannot reach them, please go and check on ${parentName} and ${childName} as soon as possible, and follow the emergency plan they have shared with you.
 
 This is a TEST alert. No emergency services have been contacted.`,
-      from: TWILIO_PHONE_NUMBER.value(),
-      to,
-    });
+  from: TWILIO_PHONE_NUMBER.value(),
+  to,
+});
 
     return {
       success: true,

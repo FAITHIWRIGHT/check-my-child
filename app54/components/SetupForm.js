@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  StyleSheet,
-  ScrollView,
+  Alert,
+  Button,
   KeyboardAvoidingView,
   Platform,
-  Button,
-  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from 'react-native';
 
 export default function SetupForm({ onSave, existingPlan }) {
@@ -116,7 +116,7 @@ export default function SetupForm({ onSave, existingPlan }) {
     />
 
     <TextInput
-      placeholder="Optional notes (e.g. medical needs, spare key/home access info)"
+      placeholder="Emergency Plan (e.g. medical needs, spare key/home access info)"
       value={child.notes}
       onChangeText={(text) => {
         const updatedChildren = [...children];

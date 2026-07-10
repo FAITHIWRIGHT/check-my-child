@@ -10,17 +10,18 @@ import {
   serverTimestamp,
   where
 } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useEffect, useState } from 'react';
 import { Alert, Image, StyleSheet, Text, View } from 'react-native';
-import SetupForm from './components/SetupForm';
-import WelcomeScreen from './components/WelcomeScreen';
-import { auth, db } from './firebase/firebaseconfig';
-
 import AuthScreen from './components/AuthScreen';
 import CheckInButton from './components/CheckInButton';
 import Header from './components/Header';
+import SafetyPlanIntro from './components/SafetyPlanIntro';
 import SafetyPlanView from './components/SafetyPlanView';
+import SetupForm from './components/SetupForm';
 import StatusCard from './components/StatusCard';
+import WelcomeScreen from './components/WelcomeScreen';
+import { auth, db } from './firebase/firebaseconfig';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -38,6 +39,7 @@ export default function App() {
   const [safetyPlan, setSafetyPlan] = useState(null);
   const [showSplash, setShowSplash] = useState(true);
   const [user, setUser] = useState(null);
+  const functions = getFunctions();
 
  useEffect(() => {
   
@@ -65,11 +67,11 @@ const loadSafetyPlanForUser = async (signedInUser) => {
 
       setCurrentScreen('home');
     } else {
-      setCurrentScreen('setup');
-    }
+  setCurrentScreen('safetyPlanIntro');
+}
   } catch (error) {
     Alert.alert('Load Error', error.message);
-    setCurrentScreen('setup');
+    setCurrentScreen('safetyPlanIntro');
   }
 };
 const loadTodayCheckInForUser = async (signedInUser) => {
@@ -209,36 +211,68 @@ const handleLogout = async () => {
       savedPlan ? savedPlan : 'No Safety Plan found'
     );
   };
-const testSafetyPlanAlert = () => {
-  if (!safetyPlan) {
-    Alert.alert(
-      'No Safety Plan Found',
-      'Please create a Safety Plan before testing your alert message.'
+  const testSafetyPlanAlert = async () => {
+  try {
+    if (!safetyPlan) {
+      Alert.alert(
+        'No Safety Plan Found',
+        'Please create a Safety Plan before testing your alert message.'
+      );
+      return;
+    }
+
+    const firstChild = safetyPlan.children?.[0];
+
+    const firstChildName = firstChild?.name || 'your child';
+
+    const emergencyPlan =
+      firstChild?.notes || 'No emergency instructions provided.';
+
+    const savedContactPhone = safetyPlan.contactPhone?.trim();
+
+    if (!savedContactPhone) {
+      Alert.alert(
+        'Trusted Contact Number Missing',
+        'Please add a trusted contact phone number to your Safety Plan.'
+      );
+      return;
+    }
+
+    const trustedContactNumber = savedContactPhone.startsWith('0')
+      ? `+44${savedContactPhone.slice(1)}`
+      : savedContactPhone;
+
+    const sendTestSms = httpsCallable(
+      functions,
+      'sendTestSafetyPlanSms'
     );
-    return;
+
+    const result = await sendTestSms({
+      to: trustedContactNumber,
+      parentName: safetyPlan.parentName,
+      childName: firstChildName,
+      emergencyPlan,
+    });
+
+    console.log('Test SMS result:', result.data);
+
+    Alert.alert(
+      'Test SMS Sent',
+      'Your test Safety Plan alert has been sent to your trusted contact.'
+    );
+  } catch (error) {
+    console.log('Test SMS error:', error);
+
+    Alert.alert(
+      'Test SMS Error',
+      error?.message || 'The test message could not be sent.'
+    );
   }
-
-  const firstChildName =
-  safetyPlan.children && safetyPlan.children.length > 0
-    ? safetyPlan.children[0].name
-    : 'your child';
-
-  Alert.alert(
-    'TEST Check My Child Alert',
-    `Check My Child Alert.
-
-${safetyPlan.parentName} has not completed today's check-in.
-
-This could mean ${firstChildName} may need your help.
-
-Please try to contact ${safetyPlan.parentName} first. If you cannot reach them, follow the emergency plan they have shared with you.
-
-This is a TEST alert. No emergency services have been contacted.`
-  );
 };
+
  const handleCheckIn = async () => {
   try {
-    const currentUser = auth.currentUser;
+    const currentUser = auth.currentUser || user;
 
     if (!currentUser) {
       Alert.alert(
@@ -296,11 +330,22 @@ if (showSplash) {
 if (currentScreen === 'auth') {
   return (
     <AuthScreen
-  onSignedIn={(signedInUser) => {
-    setUser(signedInUser);
-    loadSafetyPlanForUser(signedInUser);
-  }}
-/>
+      onAccountCreated={(signedInUser) => {
+        setUser(signedInUser);
+        setCurrentScreen('safetyPlanIntro');
+      }}
+      onSignedIn={(signedInUser) => {
+        setUser(signedInUser);
+        loadSafetyPlanForUser(signedInUser);
+      }}
+    />
+  );
+}
+if (currentScreen === 'safetyPlanIntro') {
+  return (
+    <SafetyPlanIntro
+      onContinue={() => setCurrentScreen('setup')}
+    />
   );
 }
   if (currentScreen === 'setup') {

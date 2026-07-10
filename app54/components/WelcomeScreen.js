@@ -1,5 +1,4 @@
-import React from 'react';
-import { View, Text, Pressable, StyleSheet, Image } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 export default function WelcomeScreen({ onBegin }) {
   return (
@@ -14,12 +13,10 @@ export default function WelcomeScreen({ onBegin }) {
        Check My Child helps protect children who are unable to call for help themselves if a parent or sole carer is unable to ask for help. This includes young children and some children with disabilities or complex needs.
       </Text>
 
-      <Text style={styles.text}>
-        Before we begin, let's create your family's Safety Plan.
-      </Text>
+      
 
       <Pressable style={styles.button} onPress={onBegin}>
-        <Text style={styles.buttonText}>Create Your Safety Plan</Text>
+        <Text style={styles.buttonText}>Get Started</Text>
       </Pressable>
     </View>
   );

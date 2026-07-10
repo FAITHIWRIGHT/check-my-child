@@ -1,20 +1,20 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  StyleSheet,
-  Alert,
-} from 'react-native';
 import {
   createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
   sendPasswordResetEmail,
+  signInWithEmailAndPassword,
 } from 'firebase/auth';
+import { useState } from 'react';
+import {
+  Alert,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { auth } from '../firebase/firebaseconfig';
 
-export default function AuthScreen({ onSignedIn }) {
+export default function AuthScreen({ onSignedIn, onAccountCreated }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -33,7 +33,7 @@ export default function AuthScreen({ onSignedIn }) {
 
       Alert.alert('Account Created', 'Your Check My Child account has been created.');
 
-      onSignedIn(userCredential.user);
+      onAccountCreated(userCredential.user);
     } catch (error) {
       Alert.alert('Sign Up Error', error.message);
     }
