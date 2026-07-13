@@ -30,6 +30,9 @@ export default function SetupForm({ onSave, existingPlan }) {
   const [contactPhone, setContactPhone] = useState(existingPlan?.contactPhone || '');
 
   const [parentPhone, setParentPhone] = useState(existingPlan?.parentPhone || '');
+  const [checkInTime, setCheckInTime] = useState(
+  existingPlan?.checkInTime || ''
+);
 
 
   const handleSave = () => {
@@ -38,7 +41,8 @@ export default function SetupForm({ onSave, existingPlan }) {
     parentPhone.trim() === '' ||
     contactName.trim() === '' ||
     contactPhone.trim() === '' ||
-    children.length === 0 ||
+checkInTime.trim() === '' ||
+children.length === 0 ||
     children.some(
       child =>
         child.name.trim() === '' ||
@@ -51,14 +55,26 @@ export default function SetupForm({ onSave, existingPlan }) {
     );
     return;
   }
+  const validTimeFormat = /^([01]\d|2[0-3]):([0-5]\d)$/.test(
+  checkInTime.trim()
+);
 
-  onSave({
-    parentName,
-    parentPhone,
-    children,
-    contactName,
-    contactPhone,
-  });
+if (!validTimeFormat) {
+  Alert.alert(
+    'Invalid Check-In Time',
+    'Please enter the time using the 24-hour format, for example 08:00 or 21:30.'
+  );
+  return;
+}
+
+ onSave({
+  parentName,
+  parentPhone,
+  checkInTime,
+  children,
+  contactName,
+  contactPhone,
+});
 };
 
   return (
@@ -88,6 +104,24 @@ export default function SetupForm({ onSave, existingPlan }) {
           onChangeText={setParentPhone}
           keyboardType="phone-pad"
         />
+
+        <Text style={styles.fieldLabel}>
+  Usual daily check-in time*
+</Text>
+
+<Text style={styles.fieldHelp}>
+  Choose a time around when you would normally complete your daily check-in.
+  Use the 24-hour format, for example 08:00.
+</Text>
+
+<TextInput
+  style={styles.input}
+  placeholder="08:00"
+  value={checkInTime}
+  onChangeText={setCheckInTime}
+  keyboardType="numbers-and-punctuation"
+  maxLength={5}
+/>
 
         {children.map((child, index) => (
   <View key={index} style={styles.childContainer}>
@@ -182,6 +216,23 @@ scrollContainer: {
   alignItems: 'center',
   paddingTop: 40,
   paddingBottom: 40,
+},
+
+fieldLabel: {
+  width: '100%',
+  fontSize: 16,
+  fontWeight: 'bold',
+  color: '#2E7D32',
+  marginTop: 5,
+  marginBottom: 5,
+},
+
+fieldHelp: {
+  width: '100%',
+  fontSize: 14,
+  color: '#555',
+  marginBottom: 8,
+  lineHeight: 19,
 },
 childTitle: {
   width: '100%',

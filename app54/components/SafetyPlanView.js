@@ -1,5 +1,4 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 export default function SafetyPlanView({ safetyPlan, onBack, onEdit }) {
 
@@ -11,7 +10,10 @@ export default function SafetyPlanView({ safetyPlan, onBack, onEdit }) {
         <Text style={styles.sectionTitle}>Parent / Carer</Text>
         <Text style={styles.text}>Name: {safetyPlan.parentName}</Text>
         <Text style={styles.text}>Phone: {safetyPlan.parentPhone}</Text>
-
+<Text style={styles.label}>Usual Daily Check-In Time</Text>
+<Text style={styles.value}>
+  {safetyPlan?.checkInTime || 'Not set'}
+</Text>
         <Text style={styles.sectionTitle}>Children</Text>
         {safetyPlan.children?.map((child, index) => (
           <View key={index} style={styles.childCard}>
