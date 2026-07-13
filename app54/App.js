@@ -248,11 +248,12 @@ const handleLogout = async () => {
     );
 
     const result = await sendTestSms({
-      to: trustedContactNumber,
-      parentName: safetyPlan.parentName,
-      childName: firstChildName,
-      emergencyPlan,
-    });
+  to: trustedContactNumber,
+  parentName: safetyPlan.parentName,
+  childName: firstChildName,
+  trustedContactName: safetyPlan.contactName,
+  emergencyPlan,
+});
 
     console.log('Test SMS result:', result.data);
 
@@ -266,6 +267,67 @@ const handleLogout = async () => {
     Alert.alert(
       'Test SMS Error',
       error?.message || 'The test message could not be sent.'
+    );
+  }
+};
+
+const testEmergencyAlert = async () => {
+  try {
+    if (!safetyPlan) {
+      Alert.alert(
+        'No Safety Plan Found',
+        'Please create a Safety Plan before testing.'
+      );
+      return;
+    }
+
+    const firstChild = safetyPlan.children?.[0];
+
+    const firstChildName = firstChild?.name || 'your child';
+
+    const emergencyPlan =
+      firstChild?.notes || 'No emergency instructions provided.';
+
+    const savedContactPhone = safetyPlan.contactPhone?.trim();
+
+    if (!savedContactPhone) {
+      Alert.alert(
+        'Trusted Contact Number Missing',
+        'Please add a trusted contact phone number.'
+      );
+      return;
+    }
+
+    const trustedContactNumber = savedContactPhone.startsWith('0')
+      ? `+44${savedContactPhone.slice(1)}`
+      : savedContactPhone;
+
+    const sendEmergencySms = httpsCallable(
+      functions,
+      'sendEmergencySafetyPlanSms'
+    );
+
+    const result = await sendEmergencySms({
+      to: trustedContactNumber,
+      parentName: safetyPlan.parentName,
+      childName: firstChildName,
+      trustedContactName: safetyPlan.contactName,
+      emergencyPlan,
+    });
+
+    console.log(result.data);
+
+    Alert.alert(
+      'Emergency Alert Sent',
+      'The REAL emergency alert has been sent.'
+    );
+
+  } catch (error) {
+    console.log(error);
+
+    Alert.alert(
+      'Emergency Alert Error',
+      error.message
     );
   }
 };
@@ -400,6 +462,12 @@ if (currentScreen === 'safetyPlanIntro') {
   onPress={testSafetyPlanAlert}
 >
   Test Safety Plan Alert
+</Text>
+<Text
+  style={styles.resetText}
+  onPress={testEmergencyAlert}
+>
+  Developer Test Emergency Alert
 </Text>
 
 <Text

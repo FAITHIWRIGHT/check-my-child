@@ -1,8 +1,12 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 export default function SafetyPlanIntro({ onContinue }) {
   return (
     <View style={styles.container}>
+        <Image
+  source={require('../assets/logo.png')}
+  style={styles.logo}
+/>
       <Text style={styles.title}>
         Let&apos;s Create Your Family&apos;s Safety Plan
       </Text>
@@ -33,6 +37,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 25,
   },
+  logo: {
+  width: 160,
+  height: 160,
+  resizeMode: 'contain',
+  marginBottom: 20,
+},
   title: {
     fontSize: 28,
     fontWeight: '700',
