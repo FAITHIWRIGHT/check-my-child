@@ -1,61 +1,45 @@
 import * as Notifications from 'expo-notifications';
 import { Alert } from 'react-native';
 
-export const scheduleTestReminderSequence = async (safetyPlan) => {
+export const scheduleTestReminderSequence = async () => {
   const { status } = await Notifications.requestPermissionsAsync();
 
   if (status !== 'granted') {
     Alert.alert(
-      'Notifications not allowed',
+      'Notifications Not Allowed',
       'Please allow notifications so Check My Child can remind you to check in.'
     );
     return;
   }
-  const parentName = safetyPlan?.parentName || '[Parent Name]';
-const firstChild = safetyPlan?.children?.[0];
 
-const childName = firstChild?.name || '[Child Name]';
-const childDateOfBirth = firstChild?.dateOfBirth || 'Not provided';
-const childNotes = firstChild?.notes || 'No notes added';
+  // Clear any reminders left from an earlier test.
+  await Notifications.cancelAllScheduledNotificationsAsync();
 
   await Notifications.scheduleNotificationAsync({
     content: {
       title: 'Check My Child',
-      body: "It's time to check in. Tap 'I'm OK' if you're safe today.",
+      body: "You haven't completed today's check-in. Please tap “I'm OK” if you are safe.",
       sound: true,
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-      seconds: 10,
+      seconds: 60,
     },
   });
 
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: 'Check My Child',
-      body: "Second reminder: you still need to check in today.",
+      title: 'Check My Child — Second Reminder',
+      body: "Your daily check-in is still incomplete. Please open Check My Child and tap “I'm OK”.",
       sound: true,
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-      seconds: 20,
+      seconds: 120,
     },
   });
+};
 
-  await Notifications.scheduleNotificationAsync({
-    content: {
-      title: 'Check My Child Alert',
-      body: `Hi ${trustedContactName}. Emergency test: ${parentName} has not completed today's check-in. This could mean ${childName} may need your help. Date of birth: ${childDateOfBirth}. Notes: ${childNotes}. Please try to contact ${parentName} immediately. If you cannot reach ${parentName}, please go and check on ${childName} as soon as possible.`,
-      sound: true,
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-      seconds: 30,
-    },
-  });
-
-  Alert.alert(
-    'Test Sequence Set',
-    'Two reminders and one emergency test alert will appear at 10, 20, and 30 seconds.'
-  );
+export const cancelScheduledCheckInReminders = async () => {
+  await Notifications.cancelAllScheduledNotificationsAsync();
 };

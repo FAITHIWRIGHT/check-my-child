@@ -12,6 +12,7 @@ import {
   setDoc,
   where
 } from 'firebase/firestore';
+
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useEffect, useState } from 'react';
 import { Alert, Image, StyleSheet, Text, View } from 'react-native';
@@ -24,6 +25,10 @@ import SetupForm from './components/SetupForm';
 import StatusCard from './components/StatusCard';
 import WelcomeScreen from './components/WelcomeScreen';
 import { auth, db } from './firebase/firebaseconfig';
+import {
+  cancelScheduledCheckInReminders,
+  scheduleTestReminderSequence,
+} from './services/NotificationService';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -135,7 +140,7 @@ await loadTodayCheckInForUser(currentUser);
 const startAutomaticEscalationTest = async () => {
   try {
     const currentUser = auth.currentUser || user;
-
+    
     if (!currentUser) {
       Alert.alert(
         'Login Required',
@@ -143,7 +148,23 @@ const startAutomaticEscalationTest = async () => {
       );
       return;
     }
+const today = new Date().toISOString().split('T')[0];
 
+const todayCheckInQuery = query(
+  collection(db, 'checkIns'),
+  where('userId', '==', currentUser.uid),
+  where('checkedInDate', '==', today)
+);
+
+const todayCheckInSnapshot = await getDocs(todayCheckInQuery);
+
+if (!todayCheckInSnapshot.empty) {
+  Alert.alert(
+    'Already Checked In',
+    'You have already completed today’s check-in, so no reminder or escalation sequence will start.'
+  );
+  return;
+}
     if (!safetyPlan) {
       Alert.alert(
         'No Safety Plan Found',
@@ -167,7 +188,7 @@ const startAutomaticEscalationTest = async () => {
       },
       { merge: true }
     );
-
+await scheduleTestReminderSequence();
     Alert.alert(
       'Escalation Test Started',
       'Do not check in. If the test works, the emergency SMS should be sent automatically in approximately three to four minutes.'
@@ -433,6 +454,7 @@ const testEmergencyAlert = async () => {
   },
   { merge: true }
 );
+await cancelScheduledCheckInReminders();
 
     const displayTime = now.toLocaleTimeString([], {
       hour: '2-digit',
