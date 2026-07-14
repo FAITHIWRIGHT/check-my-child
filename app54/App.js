@@ -5,9 +5,11 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import {
   addDoc,
   collection,
+  doc,
   getDocs,
   query,
   serverTimestamp,
+  setDoc,
   where
 } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
@@ -62,13 +64,21 @@ const loadSafetyPlanForUser = async (signedInUser) => {
       const planData = querySnapshot.docs[0].data();
 
       setSafetyPlan(planData);
-      await AsyncStorage.setItem('safetyPlan', JSON.stringify(planData));
-      await AsyncStorage.setItem('hasCompletedSetup', 'true');
+
+      await AsyncStorage.setItem(
+        'safetyPlan',
+        JSON.stringify(planData)
+      );
+
+      await AsyncStorage.setItem(
+        'hasCompletedSetup',
+        'true'
+      );
 
       setCurrentScreen('home');
     } else {
-  setCurrentScreen('safetyPlanIntro');
-}
+      setCurrentScreen('safetyPlanIntro');
+    }
   } catch (error) {
     Alert.alert('Load Error', error.message);
     setCurrentScreen('safetyPlanIntro');
@@ -122,6 +132,55 @@ await loadTodayCheckInForUser(currentUser);
 
   return unsubscribe;
 }, []);
+const startAutomaticEscalationTest = async () => {
+  try {
+    const currentUser = auth.currentUser || user;
+
+    if (!currentUser) {
+      Alert.alert(
+        'Login Required',
+        'Please log in before starting the escalation test.'
+      );
+      return;
+    }
+
+    if (!safetyPlan) {
+      Alert.alert(
+        'No Safety Plan Found',
+        'Please create a Safety Plan before starting the escalation test.'
+      );
+      return;
+    }
+
+    const startedAtMs = Date.now();
+    const dueAtMs = startedAtMs + 3 * 60 * 1000;
+
+    await setDoc(
+      doc(db, 'safetyPlans', currentUser.uid),
+      {
+        escalationEnabled: true,
+        testEscalationStartedAtMs: startedAtMs,
+        testEscalationDueAtMs: dueAtMs,
+        testEscalationSent: false,
+        testEscalationCancelled: false,
+        escalationError: null,
+      },
+      { merge: true }
+    );
+
+    Alert.alert(
+      'Escalation Test Started',
+      'Do not check in. If the test works, the emergency SMS should be sent automatically in approximately three to four minutes.'
+    );
+  } catch (error) {
+    console.log('Escalation test error:', error);
+
+    Alert.alert(
+      'Escalation Test Error',
+      error?.message || 'The escalation test could not be started.'
+    );
+  }
+};
   const handleSetupSave = async (data) => {
     try {
       await AsyncStorage.setItem('safetyPlan', JSON.stringify(data));
@@ -144,12 +203,23 @@ if (!currentUser) {
   return;
 }
 
-await addDoc(collection(db, 'safetyPlans'), {
-  ...data,
-  userId: currentUser.uid,
-  userEmail: currentUser.email,
-  createdAt: new Date().toISOString(),
-});
+await setDoc(
+  doc(db, 'safetyPlans', currentUser.uid),
+  {
+    ...data,
+    userId: currentUser.uid,
+    userEmail: currentUser.email,
+
+    escalationEnabled:
+      safetyPlan?.escalationEnabled ?? false,
+
+    lastEscalationDate:
+      safetyPlan?.lastEscalationDate ?? null,
+
+    updatedAt: new Date().toISOString(),
+  },
+  { merge: true }
+);
 
 setSafetyPlan(data);
 
@@ -354,6 +424,15 @@ const testEmergencyAlert = async () => {
       checkedInDate: now.toISOString().split('T')[0],
       status: 'checked_in',
     });
+    await setDoc(
+  doc(db, 'safetyPlans', currentUser.uid),
+  {
+    escalationEnabled: false,
+    testEscalationCancelled: true,
+    testEscalationCancelledAt: new Date().toISOString(),
+  },
+  { merge: true }
+);
 
     const displayTime = now.toLocaleTimeString([], {
       hour: '2-digit',
@@ -468,6 +547,12 @@ if (currentScreen === 'safetyPlanIntro') {
   onPress={testEmergencyAlert}
 >
   Developer Test Emergency Alert
+</Text>
+<Text
+  style={styles.resetText}
+  onPress={startAutomaticEscalationTest}
+>
+  Start 3-Minute Escalation Test
 </Text>
 
 <Text
