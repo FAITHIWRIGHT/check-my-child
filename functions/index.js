@@ -1,6 +1,7 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { defineSecret } = require("firebase-functions/params");
 const twilio = require("twilio");
+const { DateTime } = require("luxon");
 
 const TWILIO_ACCOUNT_SID = defineSecret("TWILIO_ACCOUNT_SID");
 const TWILIO_AUTH_TOKEN = defineSecret("TWILIO_AUTH_TOKEN");
@@ -146,6 +147,7 @@ You are receiving this alert because you have been chosen as the trusted contact
     };
   }
 );
+
 exports.processAutomaticEscalations = onSchedule(
   {
     schedule: "* * * * *",
@@ -157,7 +159,8 @@ exports.processAutomaticEscalations = onSchedule(
     ],
   },
   async () => {
-    const now = Date.now();
+    const londonNow = DateTime.now().setZone("Europe/London");
+    const todayKey = londonNow.toISODate();
 
     const plansSnapshot = await db
       .collection("safetyPlans")
@@ -165,7 +168,7 @@ exports.processAutomaticEscalations = onSchedule(
       .get();
 
     if (plansSnapshot.empty) {
-      console.log("No enabled escalation tests.");
+      console.log("No enabled Safety Plans found.");
       return;
     }
 
@@ -177,58 +180,165 @@ exports.processAutomaticEscalations = onSchedule(
     for (const planDoc of plansSnapshot.docs) {
       const plan = planDoc.data();
 
-      if (
-        !plan.testEscalationDueAtMs ||
-        plan.testEscalationDueAtMs > now ||
-        plan.testEscalationSent === true
-      ) {
+      // Ignore old duplicate Safety Plan documents.
+      // The current Safety Plan document ID should match the user's UID.
+      if (!plan.userId || planDoc.id !== plan.userId) {
         continue;
       }
 
+      if (!plan.checkInTime) {
+        console.log(`No check-in time saved for ${plan.userId}`);
+        continue;
+      }
+
+      if (plan.lastEscalationDate === todayKey) {
+        continue;
+      }
+
+      const timeParts = plan.checkInTime.split(":");
+      const hour = Number(timeParts[0]);
+      const minute = Number(timeParts[1]);
+
+      if (
+        !Number.isInteger(hour) ||
+        !Number.isInteger(minute) ||
+        hour < 0 ||
+        hour > 23 ||
+        minute < 0 ||
+        minute > 59
+      ) {
+        console.error(
+          `Invalid check-in time for ${plan.userId}: ${plan.checkInTime}`
+        );
+        continue;
+      }
+
+      const dailyCheckInTime = londonNow.startOf("day").set({
+        hour,
+        minute,
+        second: 0,
+        millisecond: 0,
+      });
+
+      const emergencyDueTime = dailyCheckInTime.plus({
+        hours: 8,
+      });
+
+      if (londonNow < emergencyDueTime) {
+        continue;
+      }
+
+      // Check whether this user has completed a check-in today.
       const checkInsSnapshot = await db
         .collection("checkIns")
         .where("userId", "==", plan.userId)
         .get();
 
-      const checkedInAfterTestStarted =
-        checkInsSnapshot.docs.some((checkInDoc) => {
-          const checkedInAt = checkInDoc.data().checkedInAt;
+      const startOfTodayMs = londonNow
+        .startOf("day")
+        .toUTC()
+        .toMillis();
+
+      const endOfTodayMs = londonNow
+        .endOf("day")
+        .toUTC()
+        .toMillis();
+
+      const checkedInToday = checkInsSnapshot.docs.some(
+        (checkInDoc) => {
+          const checkedInAt =
+            checkInDoc.data().checkedInAt;
+
+          if (!checkedInAt?.toMillis) {
+            return false;
+          }
+
+          const checkedInAtMs = checkedInAt.toMillis();
 
           return (
-            checkedInAt?.toMillis &&
-            checkedInAt.toMillis() >= plan.testEscalationStartedAtMs
+            checkedInAtMs >= startOfTodayMs &&
+            checkedInAtMs <= endOfTodayMs
           );
-        });
+        }
+      );
 
-      if (checkedInAfterTestStarted) {
-        await planDoc.ref.update({
-          escalationEnabled: false,
-          testEscalationCancelled: true,
-          testEscalationCancelledAt: new Date().toISOString(),
-        });
-
-        console.log(`Escalation cancelled for ${plan.userId}`);
+      if (checkedInToday) {
+        console.log(
+          `No escalation needed: ${plan.userId} checked in today.`
+        );
         continue;
       }
 
       const firstChild = plan.children?.[0];
-      const savedContactPhone = plan.contactPhone?.trim();
+      const savedContactPhone =
+        plan.contactPhone?.trim();
 
-      if (!firstChild || !savedContactPhone) {
-        console.error(`Missing Safety Plan data for ${plan.userId}`);
+      if (
+        !plan.parentName ||
+        !plan.contactName ||
+        !firstChild?.name ||
+        !savedContactPhone
+      ) {
+        console.error(
+          `Required Safety Plan information is missing for ${plan.userId}`
+        );
         continue;
       }
 
-      const trustedContactNumber = savedContactPhone.startsWith("0")
-        ? `+44${savedContactPhone.slice(1)}`
-        : savedContactPhone;
+      const trustedContactNumber =
+        savedContactPhone.startsWith("0")
+          ? `+44${savedContactPhone.slice(1)}`
+          : savedContactPhone;
+
+      // Claim this escalation so overlapping scheduler runs
+      // do not both send the same SMS.
+      const claimed = await db.runTransaction(
+        async (transaction) => {
+          const latestSnapshot =
+            await transaction.get(planDoc.ref);
+
+          if (!latestSnapshot.exists) {
+            return false;
+          }
+
+          const latestPlan = latestSnapshot.data();
+
+          if (
+            latestPlan.lastEscalationDate === todayKey
+          ) {
+            return false;
+          }
+
+          const processingStartedMs = Date.parse(
+            latestPlan.escalationProcessingAt || ""
+          );
+
+          const processingLockIsActive =
+            latestPlan.escalationProcessingDate ===
+              todayKey &&
+            Number.isFinite(processingStartedMs) &&
+            Date.now() - processingStartedMs <
+              10 * 60 * 1000;
+
+          if (processingLockIsActive) {
+            return false;
+          }
+
+          transaction.update(planDoc.ref, {
+            escalationProcessingDate: todayKey,
+            escalationProcessingAt:
+              new Date().toISOString(),
+          });
+
+          return true;
+        }
+      );
+
+      if (!claimed) {
+        continue;
+      }
 
       try {
-        await planDoc.ref.update({
-          testEscalationSent: true,
-          escalationProcessingAt: new Date().toISOString(),
-        });
-
         const message = await client.messages.create({
           body: `Check My Child Alert.
 
@@ -251,18 +361,25 @@ You are receiving this alert because you have been chosen as the trusted contact
         });
 
         await planDoc.ref.update({
-          escalationEnabled: false,
-          testEscalationSent: true,
-          testEscalationSentAt: new Date().toISOString(),
-          testEscalationMessageSid: message.sid,
+          lastEscalationDate: todayKey,
+          lastEscalationAt:
+            new Date().toISOString(),
+          lastEscalationMessageSid: message.sid,
+          escalationProcessingDate: null,
+          escalationProcessingAt: null,
+          escalationError: null,
         });
 
-        console.log(`Automatic escalation sent for ${plan.userId}`);
+        console.log(
+          `Automatic escalation sent for ${plan.userId}`
+        );
       } catch (error) {
         await planDoc.ref.update({
-          testEscalationSent: false,
+          escalationProcessingDate: null,
+          escalationProcessingAt: null,
           escalationError: error.message,
-          escalationErrorAt: new Date().toISOString(),
+          escalationErrorAt:
+            new Date().toISOString(),
         });
 
         console.error(
