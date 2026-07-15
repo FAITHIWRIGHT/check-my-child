@@ -27,7 +27,7 @@ import WelcomeScreen from './components/WelcomeScreen';
 import { auth, db } from './firebase/firebaseconfig';
 import {
   cancelScheduledCheckInReminders,
-  scheduleTestReminderSequence,
+  scheduleDailyCheckInReminders,
 } from './services/NotificationService';
 
 Notifications.setNotificationHandler({
@@ -188,7 +188,7 @@ if (!todayCheckInSnapshot.empty) {
       },
       { merge: true }
     );
-await scheduleTestReminderSequence();
+await scheduleDailyCheckInReminders(safetyPlan);
     Alert.alert(
       'Escalation Test Started',
       'Do not check in. If the test works, the emergency SMS should be sent automatically in approximately three to four minutes.'
@@ -243,7 +243,7 @@ await setDoc(
 );
 
 setSafetyPlan(data);
-
+await scheduleDailyCheckInReminders(data);
       Alert.alert(
         'Safety Plan Saved',
         `Welcome ${data.parentName}! Your safety plan has been saved.`,
@@ -455,6 +455,7 @@ const testEmergencyAlert = async () => {
   { merge: true }
 );
 await cancelScheduledCheckInReminders();
+await scheduleDailyCheckInReminders(safetyPlan, true);
 
     const displayTime = now.toLocaleTimeString([], {
       hour: '2-digit',
