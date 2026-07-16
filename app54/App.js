@@ -94,13 +94,24 @@ const loadTodayCheckInForUser = async (signedInUser) => {
     const today = new Date().toISOString().split('T')[0];
 
     const q = query(
-  collection(db, 'checkIns'),
-  where('userId', '==', signedInUser.uid),
-  where('checkedInDate', '==', today)
-);
+      collection(db, 'checkIns'),
+      where('userId', '==', signedInUser.uid),
+      where('checkedInDate', '==', today)
+    );
 
     const querySnapshot = await getDocs(q);
-    console.log('Today check-in search results:', querySnapshot.empty);
+
+    console.log(
+      'Today check-in search results:',
+      querySnapshot.empty
+    );
+
+    const savedPlanString =
+      await AsyncStorage.getItem('safetyPlan');
+
+    const savedPlan = savedPlanString
+      ? JSON.parse(savedPlanString)
+      : null;
 
     if (!querySnapshot.empty) {
       const checkInData = querySnapshot.docs[0].data();
@@ -108,21 +119,42 @@ const loadTodayCheckInForUser = async (signedInUser) => {
       setIsProtected(true);
 
       if (checkInData.checkedInAt?.toDate) {
-        const checkInTime = checkInData.checkedInAt.toDate().toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-        });
+        const checkInTime =
+          checkInData.checkedInAt
+            .toDate()
+            .toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            });
 
         setLastCheckIn(`Today at ${checkInTime}`);
       } else {
         setLastCheckIn('Checked in today');
       }
+
+      await cancelScheduledCheckInReminders();
+
+      if (savedPlan) {
+        await scheduleDailyCheckInReminders(
+          savedPlan,
+          true
+        );
+      }
     } else {
       setIsProtected(false);
       setLastCheckIn('Not checked in yet');
+
+      if (savedPlan) {
+        await scheduleDailyCheckInReminders(
+          savedPlan
+        );
+      }
     }
   } catch (error) {
-    console.log(error);
+    console.log(
+      'Load today check-in error:',
+      error
+    );
   }
 };
 useEffect(() => {
@@ -231,8 +263,7 @@ await setDoc(
     userId: currentUser.uid,
     userEmail: currentUser.email,
 
-    escalationEnabled:
-      safetyPlan?.escalationEnabled ?? false,
+    escalationEnabled: true,
 
     lastEscalationDate:
       safetyPlan?.lastEscalationDate ?? null,
@@ -448,7 +479,7 @@ const testEmergencyAlert = async () => {
     await setDoc(
   doc(db, 'safetyPlans', currentUser.uid),
   {
-    escalationEnabled: false,
+    
     testEscalationCancelled: true,
     testEscalationCancelledAt: new Date().toISOString(),
   },
