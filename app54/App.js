@@ -293,8 +293,7 @@ await setDoc(
 
     escalationEnabled: true,
 
-    lastEscalationDate:
-      safetyPlan?.lastEscalationDate ?? null,
+  
 
     updatedAt: new Date().toISOString(),
   },

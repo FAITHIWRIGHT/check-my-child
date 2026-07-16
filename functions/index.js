@@ -290,6 +290,7 @@ exports.processAutomaticEscalations = onSchedule(
           ? `+44${savedContactPhone.slice(1)}`
           : savedContactPhone;
 
+  
       // Claim this escalation so overlapping scheduler runs
       // do not both send the same SMS.
       const claimed = await db.runTransaction(
