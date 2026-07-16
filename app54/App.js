@@ -6,6 +6,7 @@ import {
   addDoc,
   collection,
   doc,
+  getDoc,
   getDocs,
   query,
   serverTimestamp,
@@ -58,16 +59,43 @@ export default function App() {
 }, []);
 const loadSafetyPlanForUser = async (signedInUser) => {
   try {
-    const q = query(
-      collection(db, 'safetyPlans'),
-      where('userId', '==', signedInUser.uid)
+    const uidPlanRef = doc(
+      db,
+      'safetyPlans',
+      signedInUser.uid
     );
 
-    const querySnapshot = await getDocs(q);
+    const uidPlanSnapshot = await getDoc(uidPlanRef);
 
-    if (!querySnapshot.empty) {
-      const planData = querySnapshot.docs[0].data();
+    let planData = null;
 
+    if (uidPlanSnapshot.exists()) {
+      planData = uidPlanSnapshot.data();
+    } else {
+      const q = query(
+        collection(db, 'safetyPlans'),
+        where('userId', '==', signedInUser.uid)
+      );
+
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        planData = querySnapshot.docs[0].data();
+
+        await setDoc(
+          uidPlanRef,
+          {
+            ...planData,
+            userId: signedInUser.uid,
+            userEmail: signedInUser.email,
+            updatedAt: new Date().toISOString(),
+          },
+          { merge: true }
+        );
+      }
+    }
+
+    if (planData) {
       setSafetyPlan(planData);
 
       await AsyncStorage.setItem(
