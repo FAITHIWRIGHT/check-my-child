@@ -290,50 +290,50 @@ exports.processAutomaticEscalations = onSchedule(
           ? `+44${savedContactPhone.slice(1)}`
           : savedContactPhone;
 
+          const dailyEscalationRef = db
+  .collection("dailyEscalations")
+  .doc(`${plan.userId}_${todayKey}`);
+
   
       // Claim this escalation so overlapping scheduler runs
       // do not both send the same SMS.
       const claimed = await db.runTransaction(
-        async (transaction) => {
-          const latestSnapshot =
-            await transaction.get(planDoc.ref);
+  async (transaction) => {
+    const latestPlanSnapshot =
+      await transaction.get(planDoc.ref);
 
-          if (!latestSnapshot.exists) {
-            return false;
-          }
+    const dailyLockSnapshot =
+      await transaction.get(dailyEscalationRef);
 
-          const latestPlan = latestSnapshot.data();
+    if (!latestPlanSnapshot.exists) {
+      return false;
+    }
 
-          if (
-            latestPlan.lastEscalationDate === todayKey
-          ) {
-            return false;
-          }
+    const latestPlan = latestPlanSnapshot.data();
 
-          const processingStartedMs = Date.parse(
-            latestPlan.escalationProcessingAt || ""
-          );
+    if (
+      latestPlan.lastEscalationDate === todayKey ||
+      dailyLockSnapshot.exists
+    ) {
+      return false;
+    }
 
-          const processingLockIsActive =
-            latestPlan.escalationProcessingDate ===
-              todayKey &&
-            Number.isFinite(processingStartedMs) &&
-            Date.now() - processingStartedMs <
-              10 * 60 * 1000;
+    transaction.create(dailyEscalationRef, {
+      userId: plan.userId,
+      escalationDate: todayKey,
+      status: "processing",
+      createdAt: new Date().toISOString(),
+    });
 
-          if (processingLockIsActive) {
-            return false;
-          }
+    transaction.update(planDoc.ref, {
+      escalationProcessingDate: todayKey,
+      escalationProcessingAt:
+        new Date().toISOString(),
+    });
 
-          transaction.update(planDoc.ref, {
-            escalationProcessingDate: todayKey,
-            escalationProcessingAt:
-              new Date().toISOString(),
-          });
-
-          return true;
-        }
-      );
+    return true;
+  }
+);
 
       if (!claimed) {
         continue;
@@ -371,10 +371,21 @@ You are receiving this alert because you have been chosen as the trusted contact
           escalationError: null,
         });
 
+        await dailyEscalationRef.set(
+  {
+    status: "sent",
+    sentAt: new Date().toISOString(),
+    messageSid: message.sid,
+  },
+  { merge: true }
+);
+
+
         console.log(
           `Automatic escalation sent for ${plan.userId}`
         );
       } catch (error) {
+        await dailyEscalationRef.delete();
         await planDoc.ref.update({
           escalationProcessingDate: null,
           escalationProcessingAt: null,
