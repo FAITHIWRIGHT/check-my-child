@@ -621,19 +621,7 @@ if (currentScreen === 'safetyPlanIntro') {
   style={styles.resetText}
   onPress={testSafetyPlanAlert}
 >
-  Test Safety Plan Alert
-</Text>
-<Text
-  style={styles.resetText}
-  onPress={testEmergencyAlert}
->
-  Developer Test Emergency Alert
-</Text>
-<Text
-  style={styles.resetText}
-  onPress={startAutomaticEscalationTest}
->
-  Start 3-Minute Escalation Test
+  Send Test Safety Plan SMS Alert
 </Text>
 
 <Text
@@ -642,13 +630,7 @@ if (currentScreen === 'safetyPlanIntro') {
 >
   Log Out
 </Text>
-        <Text style={styles.resetText} onPress={resetApp}>
-          Developer Reset
-        </Text>
-
-        <Text style={styles.resetText} onPress={checkSavedPlan}>
-          Check Saved Plan
-        </Text>
+       
       </View>
 
       <StatusBar style="auto" />
