@@ -362,6 +362,18 @@ const handleLogout = async () => {
   };
   const testSafetyPlanAlert = async () => {
   try {
+    const currentUser = auth.currentUser || user;
+
+    if (!currentUser) {
+      Alert.alert(
+        'Login Required',
+        'Please log in before testing your Safety Plan.'
+      );
+
+      setCurrentScreen('auth');
+      return;
+    }
+
     if (!safetyPlan) {
       Alert.alert(
         'No Safety Plan Found',
@@ -370,14 +382,35 @@ const handleLogout = async () => {
       return;
     }
 
-    const firstChild = safetyPlan.children?.[0];
+    const safetyPlanRef = doc(
+      db,
+      'safetyPlans',
+      currentUser.uid
+    );
 
-    const firstChildName = firstChild?.name || 'your child';
+    const safetyPlanSnapshot = await getDoc(safetyPlanRef);
+
+    if (
+      safetyPlanSnapshot.exists() &&
+      safetyPlanSnapshot.data().freeTestAlertUsed === true
+    ) {
+      Alert.alert(
+        'Free Test Already Used',
+        'You have already used the one free Safety Plan test included with your account.'
+      );
+      return;
+    }
+
+    const firstChild = safetyPlan.children?.[0];
+    const firstChildName =
+      firstChild?.name || 'your child';
 
     const emergencyPlan =
-      firstChild?.notes || 'No emergency instructions provided.';
+      firstChild?.notes ||
+      'No emergency instructions provided.';
 
-    const savedContactPhone = safetyPlan.contactPhone?.trim();
+    const savedContactPhone =
+      safetyPlan.contactPhone?.trim();
 
     if (!savedContactPhone) {
       Alert.alert(
@@ -387,9 +420,10 @@ const handleLogout = async () => {
       return;
     }
 
-    const trustedContactNumber = savedContactPhone.startsWith('0')
-      ? `+44${savedContactPhone.slice(1)}`
-      : savedContactPhone;
+    const trustedContactNumber =
+      savedContactPhone.startsWith('0')
+        ? `+44${savedContactPhone.slice(1)}`
+        : savedContactPhone;
 
     const sendTestSms = httpsCallable(
       functions,
@@ -397,25 +431,40 @@ const handleLogout = async () => {
     );
 
     const result = await sendTestSms({
-  to: trustedContactNumber,
-  parentName: safetyPlan.parentName,
-  childName: firstChildName,
-  trustedContactName: safetyPlan.contactName,
-  emergencyPlan,
-});
+      to: trustedContactNumber,
+      parentName: safetyPlan.parentName,
+      childName: firstChildName,
+      trustedContactName: safetyPlan.contactName,
+      emergencyPlan,
+    });
 
     console.log('Test SMS result:', result.data);
 
+    await setDoc(
+      safetyPlanRef,
+      {
+        freeTestAlertUsed: true,
+        freeTestAlertUsedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    setSafetyPlan((previousPlan) => ({
+      ...previousPlan,
+      freeTestAlertUsed: true,
+    }));
+
     Alert.alert(
       'Test SMS Sent',
-      'Your test Safety Plan alert has been sent to your trusted contact.'
+      'Your free test Safety Plan alert has been sent to your trusted contact.'
     );
   } catch (error) {
     console.log('Test SMS error:', error);
 
     Alert.alert(
       'Test SMS Error',
-      error?.message || 'The test message could not be sent.'
+      error?.message ||
+        'The test message could not be sent. Your free test has not been marked as used.'
     );
   }
 };
