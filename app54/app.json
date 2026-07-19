@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "app54",
+    "name": "Check My Child",
     "slug": "app54",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,12 +8,16 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-  "image": "./assets/logo.png",
-  "resizeMode": "contain",
-  "backgroundColor": "#EAF7FF"
-},
+      "image": "./assets/logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#EAF7FF"
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.faithwright.checkmychild",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -24,6 +28,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "cf2027ed-28fb-43c9-9e7c-cdab4183e5be"
+      }
+    },
+    "owner": "faithiwright"
   }
 }
