@@ -67,35 +67,9 @@ const loadSafetyPlanForUser = async (signedInUser) => {
 
     const uidPlanSnapshot = await getDoc(uidPlanRef);
 
-    let planData = null;
-
     if (uidPlanSnapshot.exists()) {
-      planData = uidPlanSnapshot.data();
-    } else {
-      const q = query(
-        collection(db, 'safetyPlans'),
-        where('userId', '==', signedInUser.uid)
-      );
+      const planData = uidPlanSnapshot.data();
 
-      const querySnapshot = await getDocs(q);
-
-      if (!querySnapshot.empty) {
-        planData = querySnapshot.docs[0].data();
-
-        await setDoc(
-          uidPlanRef,
-          {
-            ...planData,
-            userId: signedInUser.uid,
-            userEmail: signedInUser.email,
-            updatedAt: new Date().toISOString(),
-          },
-          { merge: true }
-        );
-      }
-    }
-
-    if (planData) {
       setSafetyPlan(planData);
 
       await AsyncStorage.setItem(
@@ -110,10 +84,22 @@ const loadSafetyPlanForUser = async (signedInUser) => {
 
       setCurrentScreen('home');
     } else {
+      setSafetyPlan(null);
+
+      await AsyncStorage.removeItem('safetyPlan');
+      await AsyncStorage.removeItem('hasCompletedSetup');
+
       setCurrentScreen('safetyPlanIntro');
     }
   } catch (error) {
-    Alert.alert('Load Error', error.message);
+    console.log('Load Safety Plan error:', error);
+
+    Alert.alert(
+      'Load Error',
+      error?.message ||
+        'Your Safety Plan could not be loaded.'
+    );
+
     setCurrentScreen('safetyPlanIntro');
   }
 };
