@@ -4,21 +4,22 @@
     "slug": "app54",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/images/check-my-child-icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/logo.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#EAF7FF"
-    },
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.faithwright.checkmychild",
-      "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
-      }
-    },
+  "image": "./assets/images/check-my-child-splash.png",
+  "resizeMode": "contain",
+  "backgroundColor": "#005ED9"
+},
+   "ios": {
+  "supportsTablet": true,
+  "bundleIdentifier": "com.faithwright.checkmychild",
+  "buildNumber": "2",
+  "infoPlist": {
+    "ITSAppUsesNonExemptEncryption": false
+  }
+},
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
