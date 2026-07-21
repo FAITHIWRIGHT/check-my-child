@@ -30,13 +30,16 @@ exports.sendTestSafetyPlanSms = onCall(
       );
     }
 
+    const userId = request.auth.uid;
+    const safetyPlanRef = db.collection("safetyPlans").doc(userId);
+
     const {
-  to,
-  parentName,
-  childName,
-  trustedContactName,
-  emergencyPlan,
-} = request.data;
+      to,
+      parentName,
+      childName,
+      trustedContactName,
+      emergencyPlan,
+    } = request.data;
 
     if (!to || !parentName || !childName) {
       throw new HttpsError(
@@ -45,13 +48,47 @@ exports.sendTestSafetyPlanSms = onCall(
       );
     }
 
-    const client = twilio(
-      TWILIO_ACCOUNT_SID.value(),
-      TWILIO_AUTH_TOKEN.value()
-    );
+    await db.runTransaction(async (transaction) => {
+      const safetyPlanSnapshot =
+        await transaction.get(safetyPlanRef);
 
-    const message = await client.messages.create({
- body: `TEST Check My Child Alert.
+      if (!safetyPlanSnapshot.exists) {
+        throw new HttpsError(
+          "not-found",
+          "No Safety Plan was found for this account."
+        );
+      }
+
+      const safetyPlanData = safetyPlanSnapshot.data();
+
+      if (safetyPlanData.freeTestAlertUsed === true) {
+        throw new HttpsError(
+          "already-exists",
+          "The free Safety Plan test has already been used."
+        );
+      }
+
+      if (safetyPlanData.freeTestAlertStatus === "sending") {
+        throw new HttpsError(
+          "already-exists",
+          "A test Safety Plan alert is already being sent."
+        );
+      }
+
+      transaction.update(safetyPlanRef, {
+        freeTestAlertStatus: "sending",
+        freeTestAlertStartedAtMs: Date.now(),
+      });
+    });
+
+    try {
+      const client = twilio(
+        TWILIO_ACCOUNT_SID.value(),
+        TWILIO_AUTH_TOKEN.value()
+      );
+
+      const message = await client.messages.create({
+        body: `TEST Check My Child Alert.
 
 Hi ${trustedContactName},
 
@@ -62,21 +99,42 @@ This could mean ${parentName} and ${childName} need your help.
 Please try to contact ${parentName} first. If you cannot reach them, please go and check on ${parentName} and ${childName} as soon as possible.
 
 Emergency Plan:
-${emergencyPlan || 'No emergency instructions provided.'}
+${emergencyPlan || "No emergency instructions provided."}
 
 No emergency services have been contacted.
 
 You are receiving this alert because you have been chosen as the trusted contact in ${parentName}'s Check My Child Safety Plan.
 
 This is a TEST alert.`,
-  from: TWILIO_PHONE_NUMBER.value(),
-  to,
-});
+        from: TWILIO_PHONE_NUMBER.value(),
+        to,
+      });
 
-    return {
-      success: true,
-      messageSid: message.sid,
-    };
+      await safetyPlanRef.update({
+        freeTestAlertUsed: true,
+        freeTestAlertUsedAtMs: Date.now(),
+        freeTestAlertStatus: "sent",
+        freeTestAlertMessageSid: message.sid,
+      });
+
+      return {
+        success: true,
+        messageSid: message.sid,
+      };
+    } catch (error) {
+      await safetyPlanRef.update({
+        freeTestAlertStatus: "failed",
+        freeTestAlertError:
+          error?.message || "The test SMS could not be sent.",
+      });
+
+      console.error("Test Safety Plan SMS error:", error);
+
+      throw new HttpsError(
+        "internal",
+        "The test Safety Plan alert could not be sent."
+      );
+    }
   }
 );
 exports.sendEmergencySafetyPlanSms = onCall(
