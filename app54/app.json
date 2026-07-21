@@ -20,16 +20,17 @@
     "ITSAppUsesNonExemptEncryption": false
   }
 },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "edgeToEdgeEnabled": true
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
+  "android": {
+  "package": "com.faithwright.checkmychild",
+  "adaptiveIcon": {
+    "foregroundImage": "./assets/images/check-my-child-icon.png",
+    "backgroundColor": "#ffffff"
+  },
+  "edgeToEdgeEnabled": true
+},
+"web": {
+  "favicon": "./assets/favicon.png"
+},
     "extra": {
       "eas": {
         "projectId": "cf2027ed-28fb-43c9-9e7c-cdab4183e5be"

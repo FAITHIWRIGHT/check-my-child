@@ -560,7 +560,7 @@ await scheduleDailyCheckInReminders(safetyPlan, true);
 
     Alert.alert(
       'Check-In Successful',
-      'You have checked in successfully. Your child is protected today. 💚'
+      'Thank you for checking in today. Your daily check in has been recorded. 💚'
     );
   } catch (error) {
     console.log(error);
@@ -635,7 +635,7 @@ if (currentScreen === 'safetyPlanIntro') {
       </Text>
 
       <Text style={styles.message}>
-        Complete your daily check-in to confirm you're safe. If a check-in is missed, your emergency plan can begin, helping ensure your child is not left without support.
+        Complete your daily check-in today. If a check-in is missed, your emergency plan will begin, helping ensure your child is not left without support.
       </Text>
 
       <View style={styles.statusContainer}>
