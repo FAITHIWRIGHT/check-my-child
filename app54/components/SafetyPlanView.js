@@ -29,13 +29,25 @@ export default function SafetyPlanView({ safetyPlan, onBack, onEdit }) {
         <Text style={styles.sectionTitle}>Trusted Contact</Text>
         <Text style={styles.text}>Name: {safetyPlan.contactName}</Text>
         <Text style={styles.text}>Phone: {safetyPlan.contactPhone}</Text>
-<Pressable style={styles.button} onPress={onEdit}>
+<Pressable
+  style={styles.button}
+  onPress={onEdit}
+  accessibilityRole="button"
+  accessibilityLabel="Edit Safety Plan"
+  accessibilityHint="Opens your Safety Plan so you can make changes."
+>
   <Text style={styles.buttonText}>Edit Safety Plan</Text>
 </Pressable>
 
-        <Pressable style={styles.button} onPress={onBack}>
-          <Text style={styles.buttonText}>Back to Home</Text>
-        </Pressable>
+       <Pressable
+  style={styles.button}
+  onPress={onBack}
+  accessibilityRole="button"
+  accessibilityLabel="Back to Home"
+  accessibilityHint="Returns to the main Check My Child screen."
+>
+  <Text style={styles.buttonText}>Back to Home</Text>
+</Pressable>
       </View>
     </ScrollView>
   );

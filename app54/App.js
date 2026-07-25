@@ -652,9 +652,12 @@ if (currentScreen === 'safetyPlanIntro') {
         >
           View Safety Plan
         </Text>
-        <Text
+     <Text
   style={styles.resetText}
   onPress={testSafetyPlanAlert}
+  accessibilityRole="button"
+  accessibilityLabel="Test My Safety Plan"
+  accessibilityHint="Sends a test SMS to your trusted contact so you can check that your emergency plan is working."
 >
   Send Test Safety Plan SMS Alert
 </Text>
@@ -662,6 +665,9 @@ if (currentScreen === 'safetyPlanIntro') {
 <Text
   style={styles.resetText}
   onPress={handleLogout}
+  accessibilityRole="button"
+  accessibilityLabel="Log Out"
+  accessibilityHint="Logs you out of Check My Child."
 >
   Log Out
 </Text>

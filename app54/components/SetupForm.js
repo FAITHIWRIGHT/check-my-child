@@ -77,22 +77,25 @@ if (!validTimeFormat) {
 });
 };
 
-  return (
+return (
   <KeyboardAvoidingView
     style={styles.keyboardContainer}
-    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
   >
     <ScrollView
+      style={styles.scrollView}
       contentContainerStyle={styles.scrollContainer}
       keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+      showsVerticalScrollIndicator={false}
     >
       <View style={styles.card}>
-        <Text style={styles.title}>Set Up Your Safety Plan
-        </Text>
+        <Text style={styles.title}>Set Up Your Safety Plan</Text>
 
         <TextInput
           style={styles.input}
           placeholder="Your name*"
+          placeholderTextColor="#666666"
           value={parentName}
           onChangeText={setParentName}
         />
@@ -100,89 +103,106 @@ if (!validTimeFormat) {
         <TextInput
           style={styles.input}
           placeholder="Your phone number*"
+          placeholderTextColor="#666666"
           value={parentPhone}
           onChangeText={setParentPhone}
           keyboardType="phone-pad"
         />
 
         <Text style={styles.fieldLabel}>
-  Usual daily check-in time*
-</Text>
+          Usual daily check-in time*
+        </Text>
 
-<Text style={styles.fieldHelp}>
-  Choose a time around when you would normally complete your daily check-in.
-  Use the 24-hour format, for example 08:00.
-</Text>
+        <Text style={styles.fieldHelp}>
+          Choose a time around when you would normally complete your daily
+          check-in. Use the 24-hour format, for example 08:00.
+        </Text>
 
-<TextInput
-  style={styles.input}
-  placeholder="08:00"
-  value={checkInTime}
-  onChangeText={setCheckInTime}
-  keyboardType="numbers-and-punctuation"
-  maxLength={5}
-/>
+        <TextInput
+          style={styles.input}
+          placeholder="08:00"
+          placeholderTextColor="#666666"
+          value={checkInTime}
+          onChangeText={setCheckInTime}
+          keyboardType="numbers-and-punctuation"
+          maxLength={5}
+        />
 
         {children.map((child, index) => (
-  <View key={index} style={styles.childContainer}>
-    <Text style={styles.childTitle}>Child {index + 1}</Text>
+          <View key={index} style={styles.childContainer}>
+            <Text style={styles.childTitle}>Child {index + 1}</Text>
 
-    <TextInput
-      placeholder="Child's name*"
-      value={child.name}
-      onChangeText={(text) => {
-        const updatedChildren = [...children];
-        updatedChildren[index].name = text;
-        setChildren(updatedChildren);
-      }}
-      style={styles.input}
-    />
+            <TextInput
+              style={styles.input}
+              placeholder="Child's name*"
+              placeholderTextColor="#666666"
+              value={child.name}
+              onChangeText={(text) => {
+                const updatedChildren = [...children];
+                updatedChildren[index].name = text;
+                setChildren(updatedChildren);
+              }}
+            />
 
-    <TextInput
-      placeholder="Date of birth*"
-      value={child.dateOfBirth}
-      onChangeText={(text) => {
-        const updatedChildren = [...children];
-        updatedChildren[index].dateOfBirth = text;
-        setChildren(updatedChildren);
-      }}
-      style={styles.input}
-    />
+            <TextInput
+              style={styles.input}
+              placeholder="Date of birth*"
+              placeholderTextColor="#666666"
+              value={child.dateOfBirth}
+              onChangeText={(text) => {
+                const updatedChildren = [...children];
+                updatedChildren[index].dateOfBirth = text;
+                setChildren(updatedChildren);
+              }}
+            />
 
-    <TextInput
-      placeholder="Emergency Plan (e.g. medical needs, spare key/home access info)"
-      value={child.notes}
-      onChangeText={(text) => {
-        const updatedChildren = [...children];
-        updatedChildren[index].notes = text;
-        setChildren(updatedChildren);
-      }}
-      style={styles.notesInput}
-      multiline
-    />
+            <TextInput
+              style={styles.notesInput}
+              placeholder="Emergency Plan (e.g. medical needs, spare key/home access info)"
+              placeholderTextColor="#666666"
+              value={child.notes}
+              onChangeText={(text) => {
+                const updatedChildren = [...children];
+                updatedChildren[index].notes = text;
+                setChildren(updatedChildren);
+              }}
+              multiline
+            />
 
-    {children.length > 1 && index > 0 && (
-      <Pressable
-        style={styles.removeButton}
-        onPress={() => {
-          const updatedChildren = children.filter((_, i) => i !== index);
-          setChildren(updatedChildren);
-        }}
-      >
-        <Text style={styles.removeButtonText}>Remove Child</Text>
-      </Pressable>
-    )}
-  </View>
-))}
+            {children.length > 1 && index > 0 && (
+              <Pressable
+                style={styles.removeButton}
+                onPress={() => {
+                  const updatedChildren = children.filter(
+                    (_, i) => i !== index
+                  );
+                  setChildren(updatedChildren);
+                }}
+              >
+                <Text style={styles.removeButtonText}>Remove Child</Text>
+              </Pressable>
+            )}
+          </View>
+        ))}
 
-<Button
-  title="+ Add Another Child"
-  onPress={() => setChildren([...children, { name: '', dateOfBirth: '', notes: '' }])}
-/>
+        <Button
+          title="+ Add Another Child"
+          onPress={() =>
+            setChildren([
+              ...children,
+              {
+                name: '',
+                dateOfBirth: '',
+                notes: '',
+              },
+            ])
+          }
+        />
 
         <TextInput
           style={styles.input}
           placeholder="Trusted contact name*"
+          placeholderTextColor="#666666"
           value={contactName}
           onChangeText={setContactName}
         />
@@ -190,6 +210,7 @@ if (!validTimeFormat) {
         <TextInput
           style={styles.input}
           placeholder="Trusted contact phone*"
+          placeholderTextColor="#666666"
           value={contactPhone}
           onChangeText={setContactPhone}
           keyboardType="phone-pad"
@@ -201,11 +222,15 @@ if (!validTimeFormat) {
       </View>
     </ScrollView>
   </KeyboardAvoidingView>
-);
+);  
 }
 
 const styles = StyleSheet.create({
   keyboardContainer: {
+  flex: 1,
+  width: '100%',
+},
+scrollView: {
   flex: 1,
   width: '100%',
 },

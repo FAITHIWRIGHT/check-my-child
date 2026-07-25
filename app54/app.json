@@ -22,6 +22,7 @@
 },
   "android": {
   "package": "com.faithwright.checkmychild",
+  "softwareKeyboardLayoutMode": "pan",
   "adaptiveIcon": {
     "foregroundImage": "./assets/images/check-my-child-icon.png",
     "backgroundColor": "#ffffff"

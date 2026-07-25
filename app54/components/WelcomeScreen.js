@@ -10,7 +10,9 @@ export default function WelcomeScreen({ onBegin }) {
 />
 
       <Text style={styles.text}>
-       Check My Child helps protect children who are unable to call for help themselves if a parent or sole carer is unable to ask for help. This includes young children and some children with disabilities or complex needs.
+       Check My Child helps protect children who are unable to call for help themselves if a parent or sole carer becomes unable to ask for help.
+
+Once your Safety Plan is active, you'll receive a reminder after 1 hour if you haven't checked in, a second reminder after 2 hours, and if no check-in is received, your trusted contact will receive an emergency SMS after 4 hours asking them to try to contact you first and, if they can't reach you, to check on you and your child as soon as possible.
       </Text>
 
       

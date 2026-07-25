@@ -32,10 +32,10 @@ export const scheduleDailyCheckInReminders = async (
   const now = new Date();
 
   const reminderOneDate = new Date();
-  reminderOneDate.setHours(hour + 2, minute, 0, 0);
+  reminderOneDate.setHours(hour + 1, minute, 0, 0);
 
   const reminderTwoDate = new Date();
-  reminderTwoDate.setHours(hour + 4, minute, 0, 0);
+  reminderTwoDate.setHours(hour + 2, minute, 0, 0);
 
   if (startTomorrow) {
   reminderOneDate.setDate(reminderOneDate.getDate() + 1);
