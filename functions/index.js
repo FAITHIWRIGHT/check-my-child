@@ -279,7 +279,7 @@ exports.processAutomaticEscalations = onSchedule(
       });
 
       const emergencyDueTime = dailyCheckInTime.plus({
-        hours: 8,
+        hours: 4,
       });
 
       if (londonNow < emergencyDueTime) {
