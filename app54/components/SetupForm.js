@@ -217,7 +217,7 @@ return (
         />
 
         <Pressable style={styles.button} onPress={handleSave}>
-          <Text style={styles.buttonText}>Save Safety Plan</Text>
+          <Text style={styles.buttonText}>Activate My Safety Plan</Text>
         </Pressable>
       </View>
     </ScrollView>

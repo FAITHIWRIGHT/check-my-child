@@ -24,6 +24,7 @@ import SafetyPlanIntro from './components/SafetyPlanIntro';
 import SafetyPlanView from './components/SafetyPlanView';
 import SetupForm from './components/SetupForm';
 import StatusCard from './components/StatusCard';
+import SubscriptionScreen from './components/SubscriptionScreen';
 import WelcomeScreen from './components/WelcomeScreen';
 import { auth, db } from './firebase/firebaseconfig';
 import {
@@ -47,6 +48,7 @@ export default function App() {
   const [safetyPlan, setSafetyPlan] = useState(null);
   const [showSplash, setShowSplash] = useState(true);
   const [user, setUser] = useState(null);
+  const [pendingSafetyPlan, setPendingSafetyPlan] = useState(null);
   const functions = getFunctions();
 
  useEffect(() => {
@@ -249,64 +251,38 @@ await scheduleDailyCheckInReminders(safetyPlan);
   }
 };
   const handleSetupSave = async (data) => {
-    try {
-      await AsyncStorage.setItem('safetyPlan', JSON.stringify(data));
-await AsyncStorage.setItem('hasCompletedSetup', 'true');
+  try {
+    const currentUser = auth.currentUser;
 
-const currentUser = auth.currentUser;
+    if (!currentUser) {
+      setUser(null);
+      setSafetyPlan(null);
+      setCurrentScreen('auth');
 
-if (!currentUser) {
-  await AsyncStorage.removeItem('safetyPlan');
-  await AsyncStorage.removeItem('hasCompletedSetup');
-
-  setUser(null);
-  setSafetyPlan(null);
-  setCurrentScreen('auth');
-
-  Alert.alert(
-    'Login Required',
-    'Please log in before saving your Safety Plan.'
-  );
-  return;
-}
-
-await setDoc(
-  doc(db, 'safetyPlans', currentUser.uid),
-  {
-    ...data,
-    userId: currentUser.uid,
-    userEmail: currentUser.email,
-
-    escalationEnabled: true,
-
-  
-
-    updatedAt: new Date().toISOString(),
-  },
-  { merge: true }
-);
-
-setSafetyPlan(data);
-await scheduleDailyCheckInReminders(data);
       Alert.alert(
-        'Safety Plan Saved',
-        `Welcome ${data.parentName}! Your safety plan has been saved.`,
-        [
-          {
-            text: 'Continue',
-            onPress: () => setCurrentScreen('home'),
-          },
-        ]
+        'Login Required',
+        'Please log in before activating your Safety Plan.'
       );
-    } catch (error) {
-  console.log(error);
+      return;
+    }
 
-  Alert.alert(
-    'Save Error',
-    error.message
-  );
-}
-  };
+    setPendingSafetyPlan(data);
+
+    await AsyncStorage.setItem(
+      'pendingSafetyPlan',
+      JSON.stringify(data)
+    );
+
+    setCurrentScreen('subscription');
+  } catch (error) {
+    console.log(error);
+
+    Alert.alert(
+      'Error',
+      error.message
+    );
+  }
+};
 const handleLogout = async () => {
   try {
     await signOut(auth);
@@ -613,6 +589,16 @@ if (currentScreen === 'safetyPlanIntro') {
       </View>
     );
   }
+ if (currentScreen === 'subscription') {
+  return (
+    <SubscriptionScreen
+      pendingSafetyPlan={pendingSafetyPlan}
+      onSubscribe={() => {}}
+      onRestore={() => {}}
+      onBack={() => setCurrentScreen('setup')}
+    />
+  );
+}
 
   if (currentScreen === 'safetyPlan') {
   return (
