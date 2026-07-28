@@ -17,47 +17,122 @@ import { auth } from '../firebase/firebaseconfig';
 export default function AuthScreen({ onSignedIn, onAccountCreated }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const maskEmail = (emailAddress) => {
+  const cleanedEmail = emailAddress.trim().toLowerCase();
+  const [name, domain] = cleanedEmail.split('@');
+
+  if (!name || !domain) {
+    return 'invalid-email-format';
+  }
+
+  return `${name.slice(0, 2)}***@${domain}`;
+};
+
+const logAuthEvent = (event, details = {}) => {
+  console.log('[AUTH EVENT]', {
+    event,
+    time: new Date().toISOString(),
+    ...details,
+  });
+};
 
   const handleSignUp = async () => {
-    if (email.trim() === '' || password.trim() === '') {
-      Alert.alert('Missing Information', 'Please enter your email and password.');
-      return;
-    }
+  const normalisedEmail = email.trim().toLowerCase();
 
-    try {
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email.trim(),
-        password
-      );
+  if (normalisedEmail === '' || password.trim() === '') {
+    Alert.alert(
+      'Missing Information',
+      'Please enter your email and password.'
+    );
+    return;
+  }
 
-      Alert.alert('Account Created', 'Your Check My Child account has been created.');
+  logAuthEvent('SIGN_UP_BUTTON_PRESSED', {
+    email: maskEmail(normalisedEmail),
+  });
 
-      onAccountCreated(userCredential.user);
-    } catch (error) {
-      Alert.alert('Sign Up Error', error.message);
-    }
-  };
-    const handleLogin = async () => {
-    if (email.trim() === '' || password.trim() === '') {
-      Alert.alert('Missing Information', 'Please enter your email and password.');
-      return;
-    }
+  try {
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      normalisedEmail,
+      password
+    );
 
-    try {
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email.trim(),
-        password
-      );
 
-      Alert.alert('Logged In', 'Welcome back to Check My Child.');
+    logAuthEvent('SIGN_UP_SUCCESS', {
+  email: maskEmail(normalisedEmail),
+  uid: userCredential.user.uid,
+  provider: userCredential.user.providerData?.[0]?.providerId || 'password',
+  creationTime: userCredential.user.metadata.creationTime,
+  lastSignInTime: userCredential.user.metadata.lastSignInTime,
+});
 
-      onSignedIn(userCredential.user);
-    } catch (error) {
-      Alert.alert('Login Error', error.message);
-    }
-  };
+    Alert.alert(
+      'Account Created',
+      'Your Check My Child account has been created.'
+    );
+
+    onAccountCreated(userCredential.user);
+  } catch (error) {
+    logAuthEvent('SIGN_UP_ERROR', {
+      email: maskEmail(normalisedEmail),
+      errorCode: error.code,
+      errorMessage: error.message,
+    });
+
+    Alert.alert('Sign Up Error', error.message);
+  }
+};
+
+const handleLogin = async () => {
+  const normalisedEmail = email.trim().toLowerCase();
+
+  if (normalisedEmail === '' || password.trim() === '') {
+    Alert.alert(
+      'Missing Information',
+      'Please enter your email and password.'
+    );
+    return;
+  }
+
+  logAuthEvent('LOGIN_BUTTON_PRESSED', {
+    email: maskEmail(normalisedEmail),
+  });
+
+  try {
+    const userCredential = await signInWithEmailAndPassword(
+      auth,
+      normalisedEmail,
+      password
+    );
+    
+    logAuthEvent('LOGIN_SUCCESS', {
+  email: maskEmail(normalisedEmail),
+  uid: userCredential.user.uid,
+  provider: userCredential.user.providerData?.[0]?.providerId || 'password',
+  creationTime: userCredential.user.metadata.creationTime,
+  lastSignInTime: userCredential.user.metadata.lastSignInTime,
+});
+
+    Alert.alert('Logged In', 'Welcome back to Check My Child.');
+    console.log('Authenticated user:', {
+  uid: userCredential.user.uid,
+  email: userCredential.user.email,
+  creationTime: userCredential.user.metadata.creationTime,
+  lastSignInTime: userCredential.user.metadata.lastSignInTime,
+});
+
+    onSignedIn(userCredential.user);
+  } catch (error) {
+    logAuthEvent('LOGIN_ERROR', {
+      email: maskEmail(normalisedEmail),
+      errorCode: error.code,
+      errorMessage: error.message,
+    });
+
+    Alert.alert('Login Error', error.message);
+  }
+};
   const handleForgotPassword = async () => {
   if (email.trim() === '') {
     Alert.alert(
@@ -68,7 +143,7 @@ export default function AuthScreen({ onSignedIn, onAccountCreated }) {
   }
 
   try {
-    await sendPasswordResetEmail(auth, email.trim());
+   await sendPasswordResetEmail(auth, email.trim().toLowerCase());
 
     Alert.alert(
       'Password Reset Sent',
