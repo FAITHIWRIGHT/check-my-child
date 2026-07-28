@@ -25,6 +25,8 @@ export const scheduleDailyCheckInReminders = async (
 
   await Notifications.cancelAllScheduledNotificationsAsync();
 
+  console.log('[REMINDERS] Existing notifications cancelled');
+
   const [hour, minute] = safetyPlan.checkInTime
     .split(':')
     .map(Number);
@@ -79,7 +81,17 @@ export const scheduleDailyCheckInReminders = async (
     reminderOneDate,
     reminderTwoDate
   );
+  const scheduled =
+  await Notifications.getAllScheduledNotificationsAsync();
+
+console.log(
+  '[REMINDERS] Total scheduled:',
+  scheduled.length
+);
+
+console.log(scheduled);
 };
+
 
 export const cancelScheduledCheckInReminders = async () => {
   await Notifications.cancelAllScheduledNotificationsAsync();

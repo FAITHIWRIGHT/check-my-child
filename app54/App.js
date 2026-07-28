@@ -41,6 +41,13 @@ Notifications.setNotificationHandler({
   }),
 });
 
+const getLocalDateString = (date = new Date()) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+};
 export default function App() {
   const [lastCheckIn, setLastCheckIn] = useState('Not checked in yet');
   const [isProtected, setIsProtected] = useState(false);
@@ -107,7 +114,7 @@ const loadSafetyPlanForUser = async (signedInUser) => {
 };
 const loadTodayCheckInForUser = async (signedInUser) => {
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateString();
 
     const q = query(
       collection(db, 'checkIns'),
@@ -117,10 +124,11 @@ const loadTodayCheckInForUser = async (signedInUser) => {
 
     const querySnapshot = await getDocs(q);
 
-    console.log(
-      'Today check-in search results:',
-      querySnapshot.empty
-    );
+    console.log('[CHECK-IN]', {
+  today,
+  foundCheckIn: !querySnapshot.empty,
+  uid: signedInUser.uid,
+});
 
     const savedPlanString =
       await AsyncStorage.getItem('safetyPlan');
@@ -185,6 +193,22 @@ await loadTodayCheckInForUser(currentUser);
 
   return unsubscribe;
 }, []);
+useEffect(() => {
+  const notificationResponseListener =
+    Notifications.addNotificationResponseReceivedListener(() => {
+      console.log('[NOTIFICATION] Notification tapped');
+
+      if (auth.currentUser) {
+        setCurrentScreen('home');
+      } else {
+        setCurrentScreen('auth');
+      }
+    });
+
+  return () => {
+    notificationResponseListener.remove();
+  };
+}, []);
 const startAutomaticEscalationTest = async () => {
   try {
     const currentUser = auth.currentUser || user;
@@ -196,7 +220,7 @@ const startAutomaticEscalationTest = async () => {
       );
       return;
     }
-const today = new Date().toISOString().split('T')[0];
+const today = getLocalDateString();
 
 const todayCheckInQuery = query(
   collection(db, 'checkIns'),
@@ -280,6 +304,80 @@ await scheduleDailyCheckInReminders(safetyPlan);
     Alert.alert(
       'Error',
       error.message
+    );
+  }
+};
+const handleTemporarySubscription = async () => {
+  try {
+    const currentUser = auth.currentUser || user;
+
+    if (!currentUser) {
+      Alert.alert(
+        'Login Required',
+        'Please log in before activating your Safety Plan.'
+      );
+      setCurrentScreen('auth');
+      return;
+    }
+
+    if (!pendingSafetyPlan) {
+      Alert.alert(
+        'Safety Plan Missing',
+        'Please complete your Safety Plan before continuing.'
+      );
+      setCurrentScreen('setup');
+      return;
+    }
+
+    const planToSave = {
+      ...pendingSafetyPlan,
+      userId: currentUser.uid,
+      subscriptionActive: true,
+    };
+
+    await setDoc(
+      doc(db, 'safetyPlans', currentUser.uid),
+      {
+        ...planToSave,
+        activatedAt: serverTimestamp(),
+      }
+    );
+
+    await AsyncStorage.setItem(
+      'safetyPlan',
+      JSON.stringify(planToSave)
+    );
+
+    await AsyncStorage.setItem(
+      'hasCompletedSetup',
+      'true'
+    );
+
+    await AsyncStorage.removeItem('pendingSafetyPlan');
+
+    setSafetyPlan(planToSave);
+    setPendingSafetyPlan(null);
+    setIsProtected(false);
+    setLastCheckIn('Not checked in yet');
+
+    await scheduleDailyCheckInReminders(planToSave);
+
+    setCurrentScreen('home');
+
+    Alert.alert(
+      'Safety Plan Activated',
+      'Your Safety Plan has been saved. This is a temporary development subscription bypass.'
+    );
+  } catch (error) {
+    console.log(
+      'Temporary subscription error:',
+      error
+    );
+
+    Alert.alert(
+      'Activation Error',
+      error?.message ||
+        'Your Safety Plan could not be activated.'
     );
   }
 };
@@ -511,7 +609,7 @@ const testEmergencyAlert = async () => {
       userId: currentUser.uid,
       userEmail: currentUser.email,
       checkedInAt: serverTimestamp(),
-      checkedInDate: now.toISOString().split('T')[0],
+      checkedInDate: getLocalDateString(now),
       status: 'checked_in',
     });
     await setDoc(
@@ -593,7 +691,7 @@ if (currentScreen === 'safetyPlanIntro') {
   return (
     <SubscriptionScreen
       pendingSafetyPlan={pendingSafetyPlan}
-      onSubscribe={() => {}}
+      onSubscribe={handleTemporarySubscription}
       onRestore={() => {}}
       onBack={() => setCurrentScreen('setup')}
     />
