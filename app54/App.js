@@ -14,9 +14,17 @@ import {
   where
 } from 'firebase/firestore';
 
+import { Ionicons } from '@expo/vector-icons';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useEffect, useState } from 'react';
-import { Alert, Image, StyleSheet, Text, View } from 'react-native';
+import {
+  Alert,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View
+} from 'react-native';
 import AuthScreen from './components/AuthScreen';
 import CheckInButton from './components/CheckInButton';
 import Header from './components/Header';
@@ -730,31 +738,79 @@ if (currentScreen === 'safetyPlanIntro') {
           lastCheckIn={lastCheckIn}
         />
 
-        <Text
-          style={styles.resetText}
-          onPress={() => setCurrentScreen('safetyPlan')}
-        >
-          View Safety Plan
-        </Text>
-     <Text
-  style={styles.resetText}
-  onPress={testSafetyPlanAlert}
-  accessibilityRole="button"
-  accessibilityLabel="Test My Safety Plan"
-  accessibilityHint="Sends a test SMS to your trusted contact so you can check that your emergency plan is working."
->
-  Send Test Safety Plan SMS Alert
-</Text>
+       <View style={styles.actionButtonRow}>
+  <Pressable
+    style={({ pressed }) => [
+      styles.actionButton,
+      styles.viewPlanButton,
+      pressed && styles.actionButtonPressed,
+    ]}
+    onPress={() => setCurrentScreen('safetyPlan')}
+    accessibilityRole="button"
+    accessibilityLabel="View Safety Plan"
+    accessibilityHint="Opens your saved Safety Plan."
+  >
+    <Ionicons
+  name="document-text-outline"
+      size={32}
+      color="#096FB8"
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    />
 
-<Text
-  style={styles.resetText}
-  onPress={handleLogout}
-  accessibilityRole="button"
-  accessibilityLabel="Log Out"
-  accessibilityHint="Logs you out of Check My Child."
->
-  Log Out
-</Text>
+    <Text style={styles.viewPlanButtonText}>
+      View{'\n'}Safety Plan
+    </Text>
+  </Pressable>
+
+  <Pressable
+    style={({ pressed }) => [
+      styles.actionButton,
+      styles.testPlanButton,
+      pressed && styles.actionButtonPressed,
+    ]}
+    onPress={testSafetyPlanAlert}
+    accessibilityRole="button"
+    accessibilityLabel="Test My Safety Plan"
+    accessibilityHint="Sends a test SMS to your trusted contact so you can check that your Safety Plan is working."
+  >
+    <Ionicons
+      name="paper-plane-outline"
+      size={32}
+      color="#218C2A"
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    />
+
+    <Text style={styles.testPlanButtonText}>
+      Test My{'\n'}Safety Plan
+    </Text>
+  </Pressable>
+
+  <Pressable
+    style={({ pressed }) => [
+      styles.actionButton,
+      styles.logoutButton,
+      pressed && styles.actionButtonPressed,
+    ]}
+    onPress={handleLogout}
+    accessibilityRole="button"
+    accessibilityLabel="Log Out"
+    accessibilityHint="Logs you out of Check My Child."
+  >
+    <Ionicons
+      name="log-out-outline"
+      size={34}
+      color="#5D6670"
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    />
+
+    <Text style={styles.logoutButtonText}>
+      Log Out
+    </Text>
+  </Pressable>
+</View>
        
       </View>
 
@@ -787,13 +843,6 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
   },
-  resetText: {
-    marginTop: 20,
-    color: '#096fb8',
-    fontSize: 14,
-    textDecorationLine: 'underline',
-    fontWeight: '600',
-  },
   splashContainer: {
     flex: 1,
     backgroundColor: '#095e92',
@@ -804,4 +853,78 @@ const styles = StyleSheet.create({
     width: 350,
     height: 350,
   },
+  actionButtonRow: {
+  flexDirection: 'row',
+  width: '100%',
+  justifyContent: 'space-between',
+  alignItems: 'stretch',
+  marginTop: 28,
+  gap: 10,
+},
+
+actionButton: {
+  flex: 1,
+  minHeight: 128,
+  borderRadius: 18,
+  alignItems: 'center',
+  justifyContent: 'center',
+  paddingHorizontal: 7,
+  paddingVertical: 14,
+  borderWidth: 1,
+  shadowColor: '#000',
+  shadowOffset: {
+    width: 0,
+    height: 2,
+  },
+  shadowOpacity: 0.08,
+  shadowRadius: 4,
+  elevation: 3,
+},
+
+actionButtonPressed: {
+  opacity: 0.72,
+  transform: [{ scale: 0.97 }],
+},
+
+viewPlanButton: {
+  backgroundColor: '#EAF4FF',
+  borderColor: '#C7DFF4',
+},
+
+testPlanButton: {
+  backgroundColor: '#ECF9E9',
+  borderColor: '#CBE9C5',
+},
+
+logoutButton: {
+  backgroundColor: '#F3F4F6',
+  borderColor: '#D8DDE2',
+},
+
+viewPlanButtonText: {
+  color: '#096FB8',
+  fontSize: 15,
+  lineHeight: 20,
+  fontWeight: '700',
+  textAlign: 'center',
+  marginTop: 10,
+},
+
+testPlanButtonText: {
+  color: '#218C2A',
+  fontSize: 15,
+  lineHeight: 20,
+  fontWeight: '700',
+  textAlign: 'center',
+  marginTop: 10,
+},
+
+logoutButtonText: {
+  color: '#5D6670',
+  fontSize: 15,
+  lineHeight: 20,
+  fontWeight: '700',
+  textAlign: 'center',
+  marginTop: 10,
+},
 });
