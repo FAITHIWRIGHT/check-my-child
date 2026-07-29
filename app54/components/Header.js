@@ -1,5 +1,4 @@
-import React from 'react';
-import { Text, StyleSheet } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 
 export default function Header() {
   return (
@@ -11,10 +10,10 @@ export default function Header() {
 
 const styles = StyleSheet.create({
   title: {
-    fontSize: 32,
+    fontSize: 35,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 20,
-    color: '#0077CC',
+    marginBottom: 30,
+    color: '#096ec1',
   },
 });

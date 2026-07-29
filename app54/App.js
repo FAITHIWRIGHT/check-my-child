@@ -836,7 +836,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: 'center',
     color: '#555',
-    marginBottom: 30,
+    marginBottom: 10,
   },
   statusContainer: {
     marginTop: 20,

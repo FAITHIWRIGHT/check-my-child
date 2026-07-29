@@ -17,14 +17,14 @@ export default function CheckInButton({ onCheckIn }) {
 const styles = StyleSheet.create({
   button: {
     backgroundColor: '#29cc00',
-    paddingVertical: 15,
-    paddingHorizontal: 35,
+    paddingVertical: 30,
+    paddingHorizontal: 90,
     borderRadius: 100,
     marginTop: 5,
   },
   buttonText: {
     color: 'white',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
   },
 });

@@ -39,10 +39,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#EAF7FF',
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 34,
+    fontWeight: '900',
     textAlign: 'center',
-    marginBottom: 30,
+    marginBottom: 10,
     color: '#000000',
   },
   text: {
@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
 },
   button: {
     backgroundColor: '#2E7D32',
-    paddingVertical: 15,
+    paddingVertical: 30,
     paddingHorizontal: 35,
     borderRadius: 12,
     marginTop: 20,
