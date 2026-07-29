@@ -175,19 +175,36 @@ const handleLogin = async () => {
         secureTextEntry
       />
 
-      <Pressable style={styles.button} onPress={handleSignUp}>
-        <Text style={styles.buttonText}>Create Account</Text>
-      </Pressable>
       <Pressable
+  style={styles.button}
+  onPress={handleSignUp}
+  accessibilityRole="button"
+  accessibilityLabel="Create account"
+  accessibilityHint="Creates a new Check My Child account"
+>
+  <Text style={styles.buttonText}>Create Account</Text>
+</Pressable>
+
+<Pressable
   style={[styles.button, { marginTop: 12, backgroundColor: '#096fb8' }]}
   onPress={handleLogin}
+  accessibilityRole="button"
+  accessibilityLabel="Log in"
+  accessibilityHint="Signs in to your existing Check My Child account"
 >
   <Text style={styles.buttonText}>Log In</Text>
 </Pressable>
-<Pressable onPress={handleForgotPassword}>
+
+<Pressable
+  onPress={handleForgotPassword}
+  accessibilityRole="button"
+  accessibilityLabel="Forgot password"
+  accessibilityHint="Opens the password reset screen"
+>
   <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
 </Pressable>
-    </View>
+
+</View>
   );
 }
 

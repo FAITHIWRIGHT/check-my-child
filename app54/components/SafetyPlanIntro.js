@@ -22,10 +22,19 @@ export default function SafetyPlanIntro({ onContinue }) {
         emergency plan you have created.
       </Text>
 
-      <Pressable style={styles.button} onPress={onContinue}>
-        <Text style={styles.buttonText}>Create My Safety Plan</Text>
-      </Pressable>
-    </View>
+      <Pressable
+  style={styles.button}
+  onPress={onContinue}
+  accessible={true}
+  accessibilityRole="button"
+  accessibilityLabel="Create my Safety Plan"
+  accessibilityHint="Opens the Safety Plan form to enter your details"
+>
+  <Text style={styles.buttonText}>
+    Create My Safety Plan
+  </Text>
+</Pressable>
+</View>
   );
 }
 

@@ -170,34 +170,39 @@ return (
             />
 
             {children.length > 1 && index > 0 && (
-              <Pressable
-                style={styles.removeButton}
-                onPress={() => {
-                  const updatedChildren = children.filter(
-                    (_, i) => i !== index
-                  );
-                  setChildren(updatedChildren);
-                }}
-              >
-                <Text style={styles.removeButtonText}>Remove Child</Text>
-              </Pressable>
+             <Pressable
+  style={styles.removeButton}
+  onPress={() => {
+    const updatedChildren = children.filter(
+      (_, i) => i !== index
+    );
+    setChildren(updatedChildren);
+  }}
+  accessibilityRole="button"
+  accessibilityLabel="Remove child"
+  accessibilityHint="Removes this child from your Safety Plan"
+>
+  <Text style={styles.removeButtonText}>Remove Child</Text>
+</Pressable>
             )}
           </View>
         ))}
 
-        <Button
-          title="+ Add Another Child"
-          onPress={() =>
-            setChildren([
-              ...children,
-              {
-                name: '',
-                dateOfBirth: '',
-                notes: '',
-              },
-            ])
-          }
-        />
+       <Button
+  title="+ Add Another Child"
+  onPress={() =>
+    setChildren([
+      ...children,
+      {
+        name: '',
+        dateOfBirth: '',
+        notes: '',
+      },
+    ])
+  }
+  accessibilityLabel="Add another child"
+  accessibilityHint="Adds another child to your Safety Plan"
+/>
 
         <TextInput
           style={styles.input}
@@ -216,12 +221,18 @@ return (
           keyboardType="phone-pad"
         />
 
-        <Pressable style={styles.button} onPress={handleSave}>
-          <Text style={styles.buttonText}>Activate My Safety Plan</Text>
-        </Pressable>
-      </View>
-    </ScrollView>
-  </KeyboardAvoidingView>
+       <Pressable
+  style={styles.button}
+  onPress={handleSave}
+  accessibilityRole="button"
+  accessibilityLabel="Activate my Safety Plan"
+  accessibilityHint="Saves your Safety Plan and starts daily check-ins after your subscription is active"
+>
+  <Text style={styles.buttonText}>Activate My Safety Plan</Text>
+</Pressable>
+</View>
+</ScrollView>
+</KeyboardAvoidingView>
 );  
 }
 

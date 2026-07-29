@@ -17,10 +17,16 @@ Once your Safety Plan is active, you'll receive a reminder after 1 hour if you h
 
       
 
-      <Pressable style={styles.button} onPress={onBegin}>
-        <Text style={styles.buttonText}>Get Started</Text>
-      </Pressable>
-    </View>
+     <Pressable
+  style={styles.button}
+  onPress={onBegin}
+  accessibilityRole="button"
+  accessibilityLabel="Get started"
+  accessibilityHint="Starts setting up your Check My Child Safety Plan"
+>
+  <Text style={styles.buttonText}>Get Started</Text>
+</Pressable>
+</View>
   );
 }
 
