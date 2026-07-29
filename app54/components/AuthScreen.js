@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import {
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
@@ -17,6 +18,8 @@ import { auth } from '../firebase/firebaseconfig';
 export default function AuthScreen({ onSignedIn, onAccountCreated }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  
   const maskEmail = (emailAddress) => {
   const cleanedEmail = emailAddress.trim().toLowerCase();
   const [name, domain] = cleanedEmail.split('@');
@@ -161,19 +164,44 @@ const handleLogin = async () => {
       <TextInput
         style={styles.input}
         placeholder="Email address"
+        placeholderTextColor="#5F6B76"
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
         keyboardType="email-address"
       />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
+     <View style={styles.passwordContainer}>
+  <TextInput
+    style={styles.passwordInput}
+    placeholder="Password"
+    placeholderTextColor="#5F6B76"
+    value={password}
+    onChangeText={setPassword}
+    secureTextEntry={!showPassword}
+    autoCapitalize="none"
+    autoCorrect={false}
+    accessibilityLabel="Password"
+  />
+
+  <Pressable
+    style={styles.passwordEyeButton}
+    onPress={() => setShowPassword(!showPassword)}
+    accessibilityRole="button"
+    accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+    accessibilityHint={
+      showPassword
+        ? 'Hides the password characters'
+        : 'Shows the password characters so you can check them'
+    }
+  >
+    <Ionicons
+      name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+      size={24}
+      color="#096fb8"
+    />
+  </Pressable>
+</View>
 
       <Pressable
   style={styles.button}
@@ -199,7 +227,7 @@ const handleLogin = async () => {
   onPress={handleForgotPassword}
   accessibilityRole="button"
   accessibilityLabel="Forgot password"
-  accessibilityHint="Opens the password reset screen"
+  accessibilityHint="Sends a password reset link to the email address entered"
 >
   <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
 </Pressable>
@@ -224,13 +252,36 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   input: {
-    width: '100%',
-    backgroundColor: 'white',
-    padding: 14,
-    borderRadius: 10,
-    marginBottom: 12,
-    fontSize: 16,
-  },
+  width: '100%',
+  backgroundColor: 'white',
+  padding: 14,
+  borderRadius: 10,
+  marginBottom: 12,
+  fontSize: 16,
+  color: '#1F2933',
+},
+  passwordContainer: {
+  width: '100%',
+  backgroundColor: 'white',
+  borderRadius: 10,
+  marginBottom: 12,
+  flexDirection: 'row',
+  alignItems: 'center',
+},
+
+passwordInput: {
+  flex: 1,
+  padding: 14,
+  fontSize: 16,
+  color: '#1F2933',
+},
+
+passwordEyeButton: {
+  paddingHorizontal: 14,
+  paddingVertical: 14,
+  justifyContent: 'center',
+  alignItems: 'center',
+},
   button: {
     backgroundColor: '#2E7D32',
     paddingVertical: 14,
