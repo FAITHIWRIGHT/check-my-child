@@ -13,6 +13,7 @@ import {
   setDoc,
   where
 } from 'firebase/firestore';
+import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 
 import { Ionicons } from '@expo/vector-icons';
 import { getFunctions, httpsCallable } from 'firebase/functions';
@@ -65,6 +66,23 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [pendingSafetyPlan, setPendingSafetyPlan] = useState(null);
   const functions = getFunctions();
+  useEffect(() => {
+  const configureRevenueCat = async () => {
+    try {
+      Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+
+      await Purchases.configure({
+        apiKey: 'appl_wkMZAaNBOMqTSCRqtftnnmsLjJD',
+      });
+
+      console.log('[REVENUECAT] Configured successfully');
+    } catch (error) {
+      console.log('[REVENUECAT] Configuration error:', error);
+    }
+  };
+
+  configureRevenueCat();
+}, []);
 
  useEffect(() => {
   
@@ -473,9 +491,9 @@ const handleLogout = async () => {
     const firstChildName =
       firstChild?.name || 'your child';
 
-    const emergencyPlan =
-      firstChild?.notes ||
-      'No emergency instructions provided.';
+   const emergencyPlan =
+  safetyPlan?.emergencyPlan ||
+  'No emergency instructions provided.';
 
     const savedContactPhone =
       safetyPlan.contactPhone?.trim();
@@ -551,8 +569,8 @@ const testEmergencyAlert = async () => {
 
     const firstChildName = firstChild?.name || 'your child';
 
-    const emergencyPlan =
-      firstChild?.notes || 'No emergency instructions provided.';
+   const emergencyPlan =
+  safetyPlan?.emergencyPlan || 'No emergency instructions provided.';
 
     const savedContactPhone = safetyPlan.contactPhone?.trim();
 

@@ -15,12 +15,11 @@ import {
 export default function SetupForm({ onSave, existingPlan }) {
   const [parentName, setParentName] = useState(existingPlan?.parentName || '');
 
-  const [children, setChildren] = useState(
+ const [children, setChildren] = useState(
   existingPlan?.children || [
     {
       name: '',
       dateOfBirth: '',
-      notes: '',
     },
   ]
 );
@@ -32,6 +31,11 @@ export default function SetupForm({ onSave, existingPlan }) {
   const [parentPhone, setParentPhone] = useState(existingPlan?.parentPhone || '');
   const [checkInTime, setCheckInTime] = useState(
   existingPlan?.checkInTime || ''
+);
+const [emergencyPlan, setEmergencyPlan] = useState(
+  existingPlan?.emergencyPlan ||
+  existingPlan?.children?.[0]?.notes ||
+  ''
 );
 
 
@@ -72,6 +76,7 @@ if (!validTimeFormat) {
   parentPhone,
   checkInTime,
   children,
+  emergencyPlan,
   contactName,
   contactPhone,
 });
@@ -155,20 +160,6 @@ return (
                 setChildren(updatedChildren);
               }}
             />
-
-            <TextInput
-              style={styles.notesInput}
-              placeholder="Emergency Plan (e.g. medical needs, spare key/home access info)"
-              placeholderTextColor="#666666"
-              value={child.notes}
-              onChangeText={(text) => {
-                const updatedChildren = [...children];
-                updatedChildren[index].notes = text;
-                setChildren(updatedChildren);
-              }}
-              multiline
-            />
-
             {children.length > 1 && index > 0 && (
              <Pressable
   style={styles.removeButton}
@@ -196,13 +187,35 @@ return (
       {
         name: '',
         dateOfBirth: '',
-        notes: '',
       },
     ])
   }
   accessibilityLabel="Add another child"
   accessibilityHint="Adds another child to your Safety Plan"
 />
+<Text style={styles.fieldLabel}>
+  Emergency Plan
+</Text>
+
+<Text style={styles.fieldHelp}>
+  Add any important information your trusted contact may need, such as medical needs, spare key details or how to access your home.
+</Text>
+
+<TextInput
+  style={styles.notesInput}
+  placeholder="Enter your Emergency Plan"
+  placeholderTextColor="#666666"
+  value={emergencyPlan}
+  onChangeText={setEmergencyPlan}
+  maxLength={500}
+  multiline
+  accessibilityLabel="Emergency Plan"
+  accessibilityHint="Enter important instructions for your trusted contact. Maximum 500 characters."
+/>
+
+<Text style={styles.characterCount}>
+  {emergencyPlan.length}/500
+</Text>
 
         <TextInput
           style={styles.input}

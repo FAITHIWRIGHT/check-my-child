@@ -20,12 +20,15 @@ export default function SafetyPlanView({ safetyPlan, onBack, onEdit }) {
             <Text style={styles.childTitle}>Child {index + 1}</Text>
             <Text style={styles.text}>Name: {child.name}</Text>
             <Text style={styles.text}>Date of Birth: {child.dateOfBirth}</Text>
-            <Text style={styles.text}>
-              Notes: {child.notes ? child.notes : 'No notes added'}
-            </Text>
           </View>
         ))}
+<Text style={styles.sectionTitle}>Emergency Plan</Text>
 
+<Text style={styles.text}>
+  {safetyPlan.emergencyPlan
+    ? safetyPlan.emergencyPlan
+    : 'No emergency plan added'}
+</Text>
         <Text style={styles.sectionTitle}>Trusted Contact</Text>
         <Text style={styles.text}>Name: {safetyPlan.contactName}</Text>
         <Text style={styles.text}>Phone: {safetyPlan.contactPhone}</Text>
