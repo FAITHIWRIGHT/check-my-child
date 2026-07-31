@@ -1,14 +1,31 @@
-const { onCall, HttpsError } = require("firebase-functions/v2/https");
-const { defineSecret } = require("firebase-functions/params");
-const twilio = require("twilio");
+const {
+  onCall,
+  HttpsError,
+} = require("firebase-functions/v2/https");
+const {
+  onSchedule,
+} = require("firebase-functions/v2/scheduler");
+const {
+  defineSecret,
+} = require("firebase-functions/params");
+const {
+  initializeApp,
+} = require("firebase-admin/app");
+const {
+  getFirestore,
+} = require("firebase-admin/firestore");
 const { DateTime } = require("luxon");
+const twilio = require("twilio");
 
-const TWILIO_ACCOUNT_SID = defineSecret("TWILIO_ACCOUNT_SID");
-const TWILIO_AUTH_TOKEN = defineSecret("TWILIO_AUTH_TOKEN");
-const TWILIO_PHONE_NUMBER = defineSecret("TWILIO_PHONE_NUMBER");
-const { onSchedule } = require("firebase-functions/v2/scheduler");
-const { initializeApp } = require("firebase-admin/app");
-const { getFirestore } = require("firebase-admin/firestore");
+const TWILIO_ACCOUNT_SID = defineSecret(
+  "TWILIO_ACCOUNT_SID"
+);
+const TWILIO_AUTH_TOKEN = defineSecret(
+  "TWILIO_AUTH_TOKEN"
+);
+const TWILIO_PHONE_NUMBER = defineSecret(
+  "TWILIO_PHONE_NUMBER"
+);
 
 initializeApp();
 
@@ -31,7 +48,9 @@ exports.sendTestSafetyPlanSms = onCall(
     }
 
     const userId = request.auth.uid;
-    const safetyPlanRef = db.collection("safetyPlans").doc(userId);
+    const safetyPlanRef = db
+      .collection("safetyPlans")
+      .doc(userId);
 
     const {
       to,
@@ -59,16 +78,22 @@ exports.sendTestSafetyPlanSms = onCall(
         );
       }
 
-      const safetyPlanData = safetyPlanSnapshot.data();
+      const safetyPlanData =
+        safetyPlanSnapshot.data();
 
-      if (safetyPlanData.freeTestAlertUsed === true) {
+      if (
+        safetyPlanData.freeTestAlertUsed === true
+      ) {
         throw new HttpsError(
           "already-exists",
           "The free Safety Plan test has already been used."
         );
       }
 
-      if (safetyPlanData.freeTestAlertStatus === "sending") {
+      if (
+        safetyPlanData.freeTestAlertStatus ===
+        "sending"
+      ) {
         throw new HttpsError(
           "already-exists",
           "A test Safety Plan alert is already being sent."
@@ -87,8 +112,9 @@ exports.sendTestSafetyPlanSms = onCall(
         TWILIO_AUTH_TOKEN.value()
       );
 
-      const message = await client.messages.create({
-        body: `TEST Check My Child Alert.
+      const message =
+        await client.messages.create({
+          body: `TEST Check My Child Alert.
 
 Hi ${trustedContactName},
 
@@ -106,9 +132,9 @@ No emergency services have been contacted.
 You are receiving this alert because you have been chosen as the trusted contact in ${parentName}'s Check My Child Safety Plan.
 
 This is a TEST alert.`,
-        from: TWILIO_PHONE_NUMBER.value(),
-        to,
-      });
+          from: TWILIO_PHONE_NUMBER.value(),
+          to,
+        });
 
       await safetyPlanRef.update({
         freeTestAlertUsed: true,
@@ -125,10 +151,14 @@ This is a TEST alert.`,
       await safetyPlanRef.update({
         freeTestAlertStatus: "failed",
         freeTestAlertError:
-          error?.message || "The test SMS could not be sent.",
+          error?.message ||
+          "The test SMS could not be sent.",
       });
 
-      console.error("Test Safety Plan SMS error:", error);
+      console.error(
+        "Test Safety Plan SMS error:",
+        error
+      );
 
       throw new HttpsError(
         "internal",
@@ -137,6 +167,7 @@ This is a TEST alert.`,
     }
   }
 );
+
 exports.sendEmergencySafetyPlanSms = onCall(
   {
     secrets: [
@@ -178,8 +209,9 @@ exports.sendEmergencySafetyPlanSms = onCall(
       TWILIO_AUTH_TOKEN.value()
     );
 
-    const message = await client.messages.create({
-      body: `Check My Child Alert.
+    const message =
+      await client.messages.create({
+        body: `Check My Child Alert.
 
 Hi ${trustedContactName},
 
@@ -195,9 +227,9 @@ ${emergencyPlan || "No emergency instructions provided."}
 No emergency services have been contacted.
 
 You are receiving this alert because you have been chosen as the trusted contact in ${parentName}'s Check My Child Safety Plan.`,
-      from: TWILIO_PHONE_NUMBER.value(),
-      to,
-    });
+        from: TWILIO_PHONE_NUMBER.value(),
+        to,
+      });
 
     return {
       success: true,
@@ -206,200 +238,274 @@ You are receiving this alert because you have been chosen as the trusted contact
   }
 );
 
-exports.processAutomaticEscalations = onSchedule(
-  {
-    schedule: "* * * * *",
-    timeZone: "Europe/London",
-    secrets: [
-      TWILIO_ACCOUNT_SID,
-      TWILIO_AUTH_TOKEN,
-      TWILIO_PHONE_NUMBER,
-    ],
-  },
-  async () => {
-    const londonNow = DateTime.now().setZone("Europe/London");
-    const todayKey = londonNow.toISODate();
+exports.processAutomaticEscalations =
+  onSchedule(
+    {
+      schedule: "* * * * *",
+      timeZone: "Europe/London",
+      secrets: [
+        TWILIO_ACCOUNT_SID,
+        TWILIO_AUTH_TOKEN,
+        TWILIO_PHONE_NUMBER,
+      ],
+    },
+    async () => {
+      const londonNow = DateTime.now().setZone(
+        "Europe/London"
+      );
+      const todayKey = londonNow.toISODate();
 
-    const plansSnapshot = await db
-      .collection("safetyPlans")
-      .where("escalationEnabled", "==", true)
-      .get();
-
-    if (plansSnapshot.empty) {
-      console.log("No enabled Safety Plans found.");
-      return;
-    }
-
-    const client = twilio(
-      TWILIO_ACCOUNT_SID.value(),
-      TWILIO_AUTH_TOKEN.value()
-    );
-
-    for (const planDoc of plansSnapshot.docs) {
-      const plan = planDoc.data();
-
-      // Ignore old duplicate Safety Plan documents.
-      // The current Safety Plan document ID should match the user's UID.
-      if (!plan.userId || planDoc.id !== plan.userId) {
-        continue;
-      }
-
-      if (!plan.checkInTime) {
-        console.log(`No check-in time saved for ${plan.userId}`);
-        continue;
-      }
-
-      if (plan.lastEscalationDate === todayKey) {
-        continue;
-      }
-
-      const timeParts = plan.checkInTime.split(":");
-      const hour = Number(timeParts[0]);
-      const minute = Number(timeParts[1]);
-
-      if (
-        !Number.isInteger(hour) ||
-        !Number.isInteger(minute) ||
-        hour < 0 ||
-        hour > 23 ||
-        minute < 0 ||
-        minute > 59
-      ) {
-        console.error(
-          `Invalid check-in time for ${plan.userId}: ${plan.checkInTime}`
-        );
-        continue;
-      }
-
-      const dailyCheckInTime = londonNow.startOf("day").set({
-        hour,
-        minute,
-        second: 0,
-        millisecond: 0,
-      });
-
-      const emergencyDueTime = dailyCheckInTime.plus({
-        hours: 4,
-      });
-
-      if (londonNow < emergencyDueTime) {
-        continue;
-      }
-
-      // Check whether this user has completed a check-in today.
-      const checkInsSnapshot = await db
-        .collection("checkIns")
-        .where("userId", "==", plan.userId)
+      const plansSnapshot = await db
+        .collection("safetyPlans")
         .get();
 
-      const startOfTodayMs = londonNow
-        .startOf("day")
-        .toUTC()
-        .toMillis();
+      if (plansSnapshot.empty) {
+        console.log(
+          "No Safety Plans found."
+        );
+        return;
+      }
 
-      const endOfTodayMs = londonNow
-        .endOf("day")
-        .toUTC()
-        .toMillis();
-
-      const checkedInToday = checkInsSnapshot.docs.some(
-        (checkInDoc) => {
-          const checkedInAt =
-            checkInDoc.data().checkedInAt;
-
-          if (!checkedInAt?.toMillis) {
-            return false;
-          }
-
-          const checkedInAtMs = checkedInAt.toMillis();
-
-          return (
-            checkedInAtMs >= startOfTodayMs &&
-            checkedInAtMs <= endOfTodayMs
-          );
-        }
+      const client = twilio(
+        TWILIO_ACCOUNT_SID.value(),
+        TWILIO_AUTH_TOKEN.value()
       );
 
-      if (checkedInToday) {
-        console.log(
-          `No escalation needed: ${plan.userId} checked in today.`
-        );
-        continue;
-      }
+      for (const planDoc of plansSnapshot.docs) {
+        const plan = planDoc.data();
 
-      const firstChild = plan.children?.[0];
-      const savedContactPhone =
-        plan.contactPhone?.trim();
+        /*
+         * Existing active plans may not yet contain an
+         * escalationEnabled field.
+         *
+         * A plan is eligible when its subscription is
+         * active, unless automatic escalation has been
+         * explicitly disabled.
+         */
+        const escalationIsActive =
+          plan.subscriptionActive === true &&
+          plan.escalationEnabled !== false;
 
-      if (
-        !plan.parentName ||
-        !plan.contactName ||
-        !firstChild?.name ||
-        !savedContactPhone
-      ) {
-        console.error(
-          `Required Safety Plan information is missing for ${plan.userId}`
-        );
-        continue;
-      }
+        if (!escalationIsActive) {
+          continue;
+        }
 
-      const trustedContactNumber =
-        savedContactPhone.startsWith("0")
-          ? `+44${savedContactPhone.slice(1)}`
-          : savedContactPhone;
+        /*
+         * Ignore old duplicate Safety Plan documents.
+         * The current Safety Plan document ID must match
+         * the user's Firebase UID.
+         */
+        if (
+          !plan.userId ||
+          planDoc.id !== plan.userId
+        ) {
+          continue;
+        }
 
-          const dailyEscalationRef = db
-  .collection("dailyEscalations")
-  .doc(`${plan.userId}_${todayKey}`);
+        if (!plan.checkInTime) {
+          console.log(
+            `No check-in time saved for ${plan.userId}`
+          );
+          continue;
+        }
 
-  
-      // Claim this escalation so overlapping scheduler runs
-      // do not both send the same SMS.
-      const claimed = await db.runTransaction(
-  async (transaction) => {
-    const latestPlanSnapshot =
-      await transaction.get(planDoc.ref);
+        /*
+         * Never send more than one automatic escalation
+         * for the same user on the same London calendar
+         * date.
+         */
+        if (
+          plan.lastEscalationDate === todayKey
+        ) {
+          continue;
+        }
 
-    const dailyLockSnapshot =
-      await transaction.get(dailyEscalationRef);
+        const timeParts =
+          plan.checkInTime.split(":");
+        const hour = Number(timeParts[0]);
+        const minute = Number(timeParts[1]);
 
-    if (!latestPlanSnapshot.exists) {
-      return false;
-    }
+        if (
+          !Number.isInteger(hour) ||
+          !Number.isInteger(minute) ||
+          hour < 0 ||
+          hour > 23 ||
+          minute < 0 ||
+          minute > 59
+        ) {
+          console.error(
+            `Invalid check-in time for ${plan.userId}: ${plan.checkInTime}`
+          );
+          continue;
+        }
 
-    const latestPlan = latestPlanSnapshot.data();
+        const dailyCheckInTime =
+          londonNow.startOf("day").set({
+            hour,
+            minute,
+            second: 0,
+            millisecond: 0,
+          });
 
-    if (
-      latestPlan.lastEscalationDate === todayKey ||
-      dailyLockSnapshot.exists
-    ) {
-      return false;
-    }
+        const emergencyDueTime =
+          dailyCheckInTime.plus({
+            hours: 4,
+          });
 
-    transaction.create(dailyEscalationRef, {
-      userId: plan.userId,
-      escalationDate: todayKey,
-      status: "processing",
-      createdAt: new Date().toISOString(),
-    });
+        if (londonNow < emergencyDueTime) {
+          continue;
+        }
 
-    transaction.update(planDoc.ref, {
-      escalationProcessingDate: todayKey,
-      escalationProcessingAt:
-        new Date().toISOString(),
-    });
+        /*
+         * Check whether this user completed a check-in
+         * during today's London calendar date.
+         */
+        const checkInsSnapshot = await db
+          .collection("checkIns")
+          .where(
+            "userId",
+            "==",
+            plan.userId
+          )
+          .get();
 
-    return true;
-  }
-);
+        const startOfTodayMs = londonNow
+          .startOf("day")
+          .toUTC()
+          .toMillis();
 
-      if (!claimed) {
-        continue;
-      }
+        const endOfTodayMs = londonNow
+          .endOf("day")
+          .toUTC()
+          .toMillis();
 
-      try {
-        const message = await client.messages.create({
-          body: `Check My Child Alert.
+        const checkedInToday =
+          checkInsSnapshot.docs.some(
+            (checkInDoc) => {
+              const checkedInAt =
+                checkInDoc.data().checkedInAt;
+
+              if (!checkedInAt?.toMillis) {
+                return false;
+              }
+
+              const checkedInAtMs =
+                checkedInAt.toMillis();
+
+              return (
+                checkedInAtMs >=
+                  startOfTodayMs &&
+                checkedInAtMs <=
+                  endOfTodayMs
+              );
+            }
+          );
+
+        if (checkedInToday) {
+          console.log(
+            `No escalation needed: ${plan.userId} checked in today.`
+          );
+          continue;
+        }
+
+        const firstChild =
+          plan.children?.[0];
+
+        const savedContactPhone =
+          plan.contactPhone?.trim();
+
+        if (
+          !plan.parentName ||
+          !plan.contactName ||
+          !firstChild?.name ||
+          !savedContactPhone
+        ) {
+          console.error(
+            `Required Safety Plan information is missing for ${plan.userId}`
+          );
+          continue;
+        }
+
+        const trustedContactNumber =
+          savedContactPhone.startsWith("0")
+            ? `+44${savedContactPhone.slice(1)}`
+            : savedContactPhone;
+
+        const dailyEscalationRef = db
+          .collection("dailyEscalations")
+          .doc(
+            `${plan.userId}_${todayKey}`
+          );
+
+        /*
+         * Claim this escalation in a transaction.
+         * This prevents overlapping scheduler runs from
+         * both sending the same emergency SMS.
+         */
+        const claimed =
+          await db.runTransaction(
+            async (transaction) => {
+              const latestPlanSnapshot =
+                await transaction.get(
+                  planDoc.ref
+                );
+
+              const dailyLockSnapshot =
+                await transaction.get(
+                  dailyEscalationRef
+                );
+
+              if (
+                !latestPlanSnapshot.exists
+              ) {
+                return false;
+              }
+
+              const latestPlan =
+                latestPlanSnapshot.data();
+
+              if (
+                latestPlan
+                  .lastEscalationDate ===
+                  todayKey ||
+                dailyLockSnapshot.exists
+              ) {
+                return false;
+              }
+
+              transaction.create(
+                dailyEscalationRef,
+                {
+                  userId: plan.userId,
+                  escalationDate: todayKey,
+                  status: "processing",
+                  createdAt:
+                    new Date().toISOString(),
+                }
+              );
+
+              transaction.update(
+                planDoc.ref,
+                {
+                  escalationProcessingDate:
+                    todayKey,
+                  escalationProcessingAt:
+                    new Date().toISOString(),
+                }
+              );
+
+              return true;
+            }
+          );
+
+        if (!claimed) {
+          continue;
+        }
+
+        try {
+          const message =
+            await client.messages.create({
+              body: `Check My Child Alert.
 
 Hi ${plan.contactName},
 
@@ -415,48 +521,81 @@ ${firstChild.notes || "No emergency instructions provided."}
 No emergency services have been contacted.
 
 You are receiving this alert because you have been chosen as the trusted contact in ${plan.parentName}'s Check My Child Safety Plan.`,
-          from: TWILIO_PHONE_NUMBER.value(),
-          to: trustedContactNumber,
-        });
+              from:
+                TWILIO_PHONE_NUMBER.value(),
+              to: trustedContactNumber,
+            });
 
-        await planDoc.ref.update({
-          lastEscalationDate: todayKey,
-          lastEscalationAt:
-            new Date().toISOString(),
-          lastEscalationMessageSid: message.sid,
-          escalationProcessingDate: null,
-          escalationProcessingAt: null,
-          escalationError: null,
-        });
+          const escalationSentAt =
+            new Date().toISOString();
 
-        await dailyEscalationRef.set(
-  {
-    status: "sent",
-    sentAt: new Date().toISOString(),
-    messageSid: message.sid,
-  },
-  { merge: true }
-);
+          const newEmergencySmsCount =
+            (
+              Number(
+                plan.emergencySmsCount
+              ) || 0
+            ) + 1;
 
+          await planDoc.ref.update({
+            lastEscalationDate:
+              todayKey,
+            lastEscalationAt:
+              escalationSentAt,
+            lastEscalationMessageSid:
+              message.sid,
 
-        console.log(
-          `Automatic escalation sent for ${plan.userId}`
-        );
-      } catch (error) {
-        await dailyEscalationRef.delete();
-        await planDoc.ref.update({
-          escalationProcessingDate: null,
-          escalationProcessingAt: null,
-          escalationError: error.message,
-          escalationErrorAt:
-            new Date().toISOString(),
-        });
+            emergencySmsCount:
+              newEmergencySmsCount,
+            lastEmergencySmsAt:
+              escalationSentAt,
 
-        console.error(
-          `Automatic escalation failed for ${plan.userId}:`,
-          error
-        );
+            escalationProcessingDate:
+              null,
+            escalationProcessingAt:
+              null,
+            escalationError: null,
+          });
+
+          await dailyEscalationRef.set(
+            {
+              status: "sent",
+              sentAt:
+                escalationSentAt,
+              messageSid:
+                message.sid,
+            },
+            {
+              merge: true,
+            }
+          );
+
+          console.log(
+            `Automatic escalation sent for ${plan.userId}`
+          );
+        } catch (error) {
+          /*
+           * Remove the daily lock after a failed send so
+           * the scheduler can try again on a later run.
+           */
+          await dailyEscalationRef.delete();
+
+          await planDoc.ref.update({
+            escalationProcessingDate:
+              null,
+            escalationProcessingAt:
+              null,
+            escalationError:
+              error?.message ||
+              "The automatic SMS could not be sent.",
+            escalationErrorAt:
+              new Date().toISOString(),
+          });
+
+          console.error(
+            `Automatic escalation failed for ${plan.userId}:`,
+            error
+          );
+        }
       }
     }
-  }
-);
+  );
