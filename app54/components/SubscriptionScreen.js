@@ -1,34 +1,48 @@
 import {
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 
 export default function SubscriptionScreen({
   onSubscribe,
   onRestore,
   onBack,
+  isPurchasing = false,
+  isRestoring = false,
 }) {
+  const isBusy = isPurchasing || isRestoring;
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>Activate My Safety Plan</Text>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.title}>
+          Activate My Safety Plan
+        </Text>
 
         <Text style={styles.intro}>
-          Activate your Safety Plan to begin using Check My Child’s safeguarding
-          service.
+          Activate your Safety Plan to begin using Check My Child’s
+          safeguarding service.
         </Text>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Your subscription includes:</Text>
-
-          <Text style={styles.item}>✓ Daily “I’m OK” check-ins</Text>
+          <Text style={styles.cardTitle}>
+            Your subscription includes:
+          </Text>
 
           <Text style={styles.item}>
-            ✓ Reminder notifications before a check-in is missed
+            ✓ Daily “I’m OK” check-ins
+          </Text>
+
+          <Text style={styles.item}>
+            ✓ Daily check-in reminder notifications
           </Text>
 
           <Text style={styles.item}>
@@ -36,7 +50,8 @@ export default function SubscriptionScreen({
           </Text>
 
           <Text style={styles.item}>
-            ✓ Unlimited automatic emergency SMS alerts to your trusted contact if a check-in is missed
+            ✓ Automatic emergency SMS alerts to your trusted contact
+            when a check-in is missed
           </Text>
 
           <Text style={styles.item}>
@@ -44,39 +59,84 @@ export default function SubscriptionScreen({
           </Text>
         </View>
 
-        <Text style={styles.price}>£4.99 per month</Text>
+        <Text style={styles.price}>
+          £4.99 per month
+        </Text>
 
         <Text style={styles.paymentText}>
-          Payment will be handled securely through Apple.
+          Payment renews automatically each month unless cancelled.
+          Payment is handled securely through Apple.
         </Text>
 
         <Pressable
-          style={styles.subscribeButton}
+          style={({ pressed }) => [
+            styles.subscribeButton,
+            (pressed || isBusy) && styles.buttonPressed,
+          ]}
           onPress={onSubscribe}
+          disabled={isBusy}
           accessibilityRole="button"
           accessibilityLabel="Subscribe and activate Safety Plan"
+          accessibilityHint="Opens Apple’s subscription purchase screen."
+          accessibilityState={{ disabled: isBusy }}
         >
-          <Text style={styles.subscribeButtonText}>
-            Subscribe and Activate
-          </Text>
+          {isPurchasing ? (
+            <View style={styles.loadingRow}>
+              <ActivityIndicator color="#FFFFFF" />
+
+              <Text style={styles.subscribeButtonText}>
+                Processing…
+              </Text>
+            </View>
+          ) : (
+            <Text style={styles.subscribeButtonText}>
+              Subscribe and Activate
+            </Text>
+          )}
         </Pressable>
 
         <Pressable
-          style={styles.restoreButton}
+          style={({ pressed }) => [
+            styles.restoreButton,
+            (pressed || isBusy) && styles.buttonPressed,
+          ]}
           onPress={onRestore}
+          disabled={isBusy}
           accessibilityRole="button"
           accessibilityLabel="Restore purchases"
+          accessibilityHint="Checks Apple for a previous Check My Child subscription."
+          accessibilityState={{ disabled: isBusy }}
         >
-          <Text style={styles.restoreButtonText}>Restore Purchases</Text>
+          {isRestoring ? (
+            <View style={styles.loadingRow}>
+              <ActivityIndicator color="#4F9E92" />
+
+              <Text style={styles.restoreButtonText}>
+                Restoring…
+              </Text>
+            </View>
+          ) : (
+            <Text style={styles.restoreButtonText}>
+              Restore Purchases
+            </Text>
+          )}
         </Pressable>
 
         <Pressable
-          style={styles.backButton}
+          style={({ pressed }) => [
+            styles.backButton,
+            pressed && styles.buttonPressed,
+          ]}
           onPress={onBack}
+          disabled={isBusy}
           accessibilityRole="button"
           accessibilityLabel="Go back to Safety Plan"
+          accessibilityHint="Returns to your Safety Plan form."
+          accessibilityState={{ disabled: isBusy }}
         >
-          <Text style={styles.backButtonText}>Back to Safety Plan</Text>
+          <Text style={styles.backButtonText}>
+            Back to Safety Plan
+          </Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>
@@ -142,6 +202,7 @@ const styles = StyleSheet.create({
 
   paymentText: {
     fontSize: 14,
+    lineHeight: 20,
     textAlign: 'center',
     color: '#666',
     marginBottom: 24,
@@ -153,6 +214,8 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 20,
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 56,
     marginBottom: 14,
   },
 
@@ -165,6 +228,8 @@ const styles = StyleSheet.create({
   restoreButton: {
     paddingVertical: 14,
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 50,
   },
 
   restoreButtonText: {
@@ -182,5 +247,15 @@ const styles = StyleSheet.create({
   backButtonText: {
     color: '#555',
     fontSize: 15,
+  },
+
+  loadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+
+  buttonPressed: {
+    opacity: 0.65,
   },
 });
