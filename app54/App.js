@@ -50,8 +50,13 @@ Notifications.setNotificationHandler({
   }),
 });
 
+const REVENUECAT_ENTITLEMENT_ID =
+  'Check My Child Premium';
+
+const REVENUECAT_MONTHLY_PACKAGE_ID =
+  '$rc_monthly';
+
 const getLocalDateString = (date = new Date()) => {
-  
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
@@ -71,6 +76,10 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [pendingSafetyPlan, setPendingSafetyPlan] =
     useState(null);
+  const [isPurchasing, setIsPurchasing] =
+    useState(false);
+  const [isRestoring, setIsRestoring] =
+    useState(false);
 
   const functions = getFunctions();
 
@@ -267,6 +276,7 @@ export default function App() {
             await loadSafetyPlanForUser(
               currentUser
             );
+
             await loadTodayCheckInForUser(
               currentUser
             );
@@ -433,22 +443,104 @@ export default function App() {
 
       Alert.alert(
         'Error',
-        error.message
+        error?.message ||
+          'Your Safety Plan could not be prepared for activation.'
       );
     }
   };
 
-  const handleTemporarySubscription =
+  const activateSafetyPlanAfterPurchase =
+    async (
+      currentUser,
+      planData,
+      customerInfo
+    ) => {
+      const activeEntitlement =
+        customerInfo?.entitlements?.active?.[
+          REVENUECAT_ENTITLEMENT_ID
+        ];
+
+      if (!activeEntitlement) {
+        throw new Error(
+          'RevenueCat did not confirm an active Check My Child subscription.'
+        );
+      }
+
+      const planToSave = {
+        ...planData,
+        userId: currentUser.uid,
+        subscriptionActive: true,
+        escalationEnabled: true,
+        revenueCatEntitlementId:
+          REVENUECAT_ENTITLEMENT_ID,
+        revenueCatProductIdentifier:
+          activeEntitlement.productIdentifier ||
+          null,
+        revenueCatAppUserId:
+          currentUser.uid,
+      };
+
+      await setDoc(
+        doc(
+          db,
+          'safetyPlans',
+          currentUser.uid
+        ),
+        {
+          ...planToSave,
+          activatedAt:
+            serverTimestamp(),
+          subscriptionVerifiedAt:
+            serverTimestamp(),
+        }
+      );
+
+      await AsyncStorage.setItem(
+        'safetyPlan',
+        JSON.stringify(planToSave)
+      );
+
+      await AsyncStorage.setItem(
+        'hasCompletedSetup',
+        'true'
+      );
+
+      await AsyncStorage.removeItem(
+        'pendingSafetyPlan'
+      );
+
+      setSafetyPlan(planToSave);
+      setPendingSafetyPlan(null);
+      setIsProtected(false);
+      setLastCheckIn(
+        'Not checked in yet'
+      );
+
+      await scheduleDailyCheckInReminders(
+        planToSave
+      );
+
+      setCurrentScreen('home');
+    };
+
+  const handleSubscriptionPurchase =
     async () => {
+      if (isPurchasing || isRestoring) {
+        return;
+      }
+
       try {
+        setIsPurchasing(true);
+
         const currentUser =
           auth.currentUser || user;
 
         if (!currentUser) {
           Alert.alert(
             'Login Required',
-            'Please log in before activating your Safety Plan.'
+            'Please log in before subscribing and activating your Safety Plan.'
           );
+
           setCurrentScreen('auth');
           return;
         }
@@ -456,74 +548,174 @@ export default function App() {
         if (!pendingSafetyPlan) {
           Alert.alert(
             'Safety Plan Missing',
-            'Please complete your Safety Plan before continuing.'
+            'Please complete your Safety Plan before subscribing.'
           );
+
           setCurrentScreen('setup');
           return;
         }
 
-        const planToSave = {
-          ...pendingSafetyPlan,
-          userId: currentUser.uid,
-          subscriptionActive: true,
-          escalationEnabled: true,
-        };
-
-        await setDoc(
-          doc(
-            db,
-            'safetyPlans',
-            currentUser.uid
-          ),
-          {
-            ...planToSave,
-            activatedAt:
-              serverTimestamp(),
-          }
+        await Purchases.logIn(
+          currentUser.uid
         );
 
-        await AsyncStorage.setItem(
-          'safetyPlan',
-          JSON.stringify(planToSave)
-        );
+        const offerings =
+          await Purchases.getOfferings();
 
-        await AsyncStorage.setItem(
-          'hasCompletedSetup',
-          'true'
-        );
+        const currentOffering =
+          offerings.current ||
+          offerings.all?.default;
 
-        await AsyncStorage.removeItem(
-          'pendingSafetyPlan'
-        );
+        if (!currentOffering) {
+          throw new Error(
+            'The Check My Child subscription offering is not currently available.'
+          );
+        }
 
-        setSafetyPlan(planToSave);
-        setPendingSafetyPlan(null);
-        setIsProtected(false);
-        setLastCheckIn(
-          'Not checked in yet'
-        );
+        const monthlyPackage =
+          currentOffering.monthly ||
+          currentOffering.availablePackages?.find(
+            (availablePackage) =>
+              availablePackage.identifier ===
+              REVENUECAT_MONTHLY_PACKAGE_ID
+          );
 
-        await scheduleDailyCheckInReminders(
-          planToSave
-        );
+        if (!monthlyPackage) {
+          throw new Error(
+            'The monthly Check My Child subscription could not be found.'
+          );
+        }
 
-        setCurrentScreen('home');
+        const {
+          customerInfo,
+        } =
+          await Purchases.purchasePackage(
+            monthlyPackage
+          );
+
+        const hasActiveEntitlement =
+          Boolean(
+            customerInfo?.entitlements?.active?.[
+              REVENUECAT_ENTITLEMENT_ID
+            ]
+          );
+
+        if (!hasActiveEntitlement) {
+          throw new Error(
+            'Apple completed the purchase process, but the subscription could not be verified.'
+          );
+        }
+
+        await activateSafetyPlanAfterPurchase(
+          currentUser,
+          pendingSafetyPlan,
+          customerInfo
+        );
 
         Alert.alert(
           'Safety Plan Activated',
-          'Your Safety Plan has been saved. This is a temporary development subscription bypass.'
+          'Your subscription is active and your Safety Plan has been activated.'
         );
       } catch (error) {
         console.log(
-          'Temporary subscription error:',
+          '[REVENUECAT] Purchase error:',
+          error
+        );
+
+        if (error?.userCancelled) {
+          console.log(
+            '[REVENUECAT] Purchase cancelled by user'
+          );
+          return;
+        }
+
+        Alert.alert(
+          'Subscription Not Completed',
+          error?.message ||
+            'Your subscription could not be completed. Your Safety Plan has not been activated.'
+        );
+      } finally {
+        setIsPurchasing(false);
+      }
+    };
+
+  const handleRestorePurchases =
+    async () => {
+      if (isPurchasing || isRestoring) {
+        return;
+      }
+
+      try {
+        setIsRestoring(true);
+
+        const currentUser =
+          auth.currentUser || user;
+
+        if (!currentUser) {
+          Alert.alert(
+            'Login Required',
+            'Please log in before restoring your subscription.'
+          );
+
+          setCurrentScreen('auth');
+          return;
+        }
+
+        if (!pendingSafetyPlan) {
+          Alert.alert(
+            'Complete Your Safety Plan',
+            'Please complete your Safety Plan before restoring and activating your subscription.'
+          );
+
+          setCurrentScreen('setup');
+          return;
+        }
+
+        await Purchases.logIn(
+          currentUser.uid
+        );
+
+        const customerInfo =
+          await Purchases.restorePurchases();
+
+        const hasActiveEntitlement =
+          Boolean(
+            customerInfo?.entitlements?.active?.[
+              REVENUECAT_ENTITLEMENT_ID
+            ]
+          );
+
+        if (!hasActiveEntitlement) {
+          Alert.alert(
+            'No Active Subscription Found',
+            'Apple did not find an active Check My Child subscription to restore.'
+          );
+          return;
+        }
+
+        await activateSafetyPlanAfterPurchase(
+          currentUser,
+          pendingSafetyPlan,
+          customerInfo
+        );
+
+        Alert.alert(
+          'Purchase Restored',
+          'Your subscription has been restored and your Safety Plan is active.'
+        );
+      } catch (error) {
+        console.log(
+          '[REVENUECAT] Restore error:',
           error
         );
 
         Alert.alert(
-          'Activation Error',
+          'Restore Unsuccessful',
           error?.message ||
-            'Your Safety Plan could not be activated.'
+            'Your previous purchase could not be restored.'
         );
+      } finally {
+        setIsRestoring(false);
       }
     };
 
@@ -553,7 +745,8 @@ export default function App() {
     } catch (error) {
       Alert.alert(
         'Logout Error',
-        error.message
+        error?.message ||
+          'You could not be logged out.'
       );
     }
   };
@@ -796,7 +989,8 @@ export default function App() {
 
         Alert.alert(
           'Emergency Alert Error',
-          error.message
+          error?.message ||
+            'The emergency alert could not be sent.'
         );
       }
     };
@@ -873,7 +1067,8 @@ export default function App() {
 
       Alert.alert(
         'Check-In Error',
-        error.message
+        error?.message ||
+          'Your check-in could not be recorded.'
       );
     }
   };
@@ -958,15 +1153,20 @@ export default function App() {
   ) {
     return (
       <SubscriptionScreen
-        pendingSafetyPlan={
-          pendingSafetyPlan
-        }
         onSubscribe={
-          handleTemporarySubscription
+          handleSubscriptionPurchase
         }
-        onRestore={() => {}}
+        onRestore={
+          handleRestorePurchases
+        }
         onBack={() =>
           setCurrentScreen('setup')
+        }
+        isPurchasing={
+          isPurchasing
+        }
+        isRestoring={
+          isRestoring
         }
       />
     );
