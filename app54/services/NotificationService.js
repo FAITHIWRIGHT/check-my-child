@@ -5,7 +5,8 @@ export const scheduleDailyCheckInReminders = async (
   safetyPlan,
   startTomorrow = false
 ) => {
-  const { status } = await Notifications.requestPermissionsAsync();
+  const { status } =
+    await Notifications.requestPermissionsAsync();
 
   if (status !== 'granted') {
     Alert.alert(
@@ -23,76 +24,113 @@ export const scheduleDailyCheckInReminders = async (
     return;
   }
 
+  const [checkInHour, checkInMinute] =
+    safetyPlan.checkInTime
+      .split(':')
+      .map(Number);
+
+  if (
+    !Number.isInteger(checkInHour) ||
+    !Number.isInteger(checkInMinute) ||
+    checkInHour < 0 ||
+    checkInHour > 23 ||
+    checkInMinute < 0 ||
+    checkInMinute > 59
+  ) {
+    Alert.alert(
+      'Invalid Check-In Time',
+      'Please review the daily check-in time in your Safety Plan.'
+    );
+    return;
+  }
+
   await Notifications.cancelAllScheduledNotificationsAsync();
 
-  console.log('[REMINDERS] Existing notifications cancelled');
+  console.log(
+    '[REMINDERS] Existing notifications cancelled'
+  );
 
-  const [hour, minute] = safetyPlan.checkInTime
-    .split(':')
-    .map(Number);
+  const getReminderTime = (hoursAfterCheckIn) => {
+    const minutesInDay = 24 * 60;
 
-  const now = new Date();
+    const totalMinutes =
+      (
+        checkInHour * 60 +
+        checkInMinute +
+        hoursAfterCheckIn * 60
+      ) % minutesInDay;
 
-  const reminderOneDate = new Date();
-  reminderOneDate.setHours(hour + 1, minute, 0, 0);
+    return {
+      hour: Math.floor(totalMinutes / 60),
+      minute: totalMinutes % 60,
+    };
+  };
 
-  const reminderTwoDate = new Date();
-  reminderTwoDate.setHours(hour + 2, minute, 0, 0);
-
-  if (startTomorrow) {
-  reminderOneDate.setDate(reminderOneDate.getDate() + 1);
-  reminderTwoDate.setDate(reminderTwoDate.getDate() + 1);
-} else {
-  if (reminderOneDate <= now) {
-    reminderOneDate.setDate(reminderOneDate.getDate() + 1);
-  }
-
-  if (reminderTwoDate <= now) {
-    reminderTwoDate.setDate(reminderTwoDate.getDate() + 1);
-  }
-}
+  const reminderOneTime = getReminderTime(1);
+  const reminderTwoTime = getReminderTime(2);
 
   await Notifications.scheduleNotificationAsync({
     content: {
       title: 'Check My Child',
-      body: "You haven't completed today's check-in. Please open the app and tap “I'm OK”.",
+      body:
+        "You haven't completed today's check-in. Please open the app and tap “I'm OK”.",
       sound: true,
     },
     trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.DATE,
-      date: reminderOneDate,
+      type:
+        Notifications
+          .SchedulableTriggerInputTypes
+          .DAILY,
+      hour: reminderOneTime.hour,
+      minute: reminderOneTime.minute,
     },
   });
 
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: 'Check My Child — Second Reminder',
-      body: "Your daily check-in is still incomplete. Please open Check My Child and tap “I'm OK”.",
+      title:
+        'Check My Child — Second Reminder',
+      body:
+        "Your daily check-in is still incomplete. Please open Check My Child and tap “I'm OK”.",
       sound: true,
     },
     trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.DATE,
-      date: reminderTwoDate,
+      type:
+        Notifications
+          .SchedulableTriggerInputTypes
+          .DAILY,
+      hour: reminderTwoTime.hour,
+      minute: reminderTwoTime.minute,
     },
   });
 
-  console.log(
-    'Daily reminders scheduled:',
-    reminderOneDate,
-    reminderTwoDate
-  );
   const scheduled =
-  await Notifications.getAllScheduledNotificationsAsync();
+    await Notifications
+      .getAllScheduledNotificationsAsync();
 
-console.log(
-  '[REMINDERS] Total scheduled:',
-  scheduled.length
-);
+  console.log(
+    '[REMINDERS] Daily reminders scheduled:',
+    {
+      checkInTime: safetyPlan.checkInTime,
+      reminderOneTime,
+      reminderTwoTime,
+      totalScheduled: scheduled.length,
+      startTomorrowRequested: startTomorrow,
+    }
+  );
 
-console.log(scheduled);
+  console.log(
+    '[REMINDERS] Scheduled notification details:',
+    scheduled
+  );
 };
 
+export const cancelScheduledCheckInReminders =
+  async () => {
+    await Notifications
+      .cancelAllScheduledNotificationsAsync();
 
-export const cancelScheduledCheckInReminders = async () => {
-  await Notifications.cancelAllScheduledNotificationsAsync();
-};
+    console.log(
+      '[REMINDERS] All scheduled notifications cancelled'
+    );
+  };
