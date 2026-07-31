@@ -407,6 +407,66 @@ const handleTemporarySubscription = async () => {
     );
   }
 };
+const handleReactivateSafetyPlan = async () => {
+  try {
+    const currentUser = auth.currentUser || user;
+
+    if (!currentUser || !safetyPlan) {
+      Alert.alert(
+        'Safety Plan Error',
+        'Your Safety Plan could not be found.'
+      );
+      return;
+    }
+
+    await setDoc(
+      doc(db, 'safetyPlans', currentUser.uid),
+      {
+        safetyPlanPaused: false,
+        consecutiveMissedCheckIns: 0,
+        reactivatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    const updatedPlan = {
+      ...safetyPlan,
+      safetyPlanPaused: false,
+      consecutiveMissedCheckIns: 0,
+      reactivatedAt: new Date().toISOString(),
+    };
+
+    setSafetyPlan(updatedPlan);
+
+    await AsyncStorage.setItem(
+      'safetyPlan',
+      JSON.stringify(updatedPlan)
+    );
+
+    setIsProtected(false);
+    setLastCheckIn('Not checked in yet');
+
+    await scheduleDailyCheckInReminders(updatedPlan);
+
+    setCurrentScreen('home');
+
+    Alert.alert(
+      'Safety Plan Reactivated',
+      'Your Safety Plan is active again. Please continue completing your daily check-ins at your chosen time.'
+    );
+  } catch (error) {
+    console.log(
+      'Safety Plan reactivation error:',
+      error
+    );
+
+    Alert.alert(
+      'Reactivation Error',
+      error?.message ||
+        'Your Safety Plan could not be reactivated.'
+    );
+  }
+};
 const handleLogout = async () => {
   try {
     await signOut(auth);
@@ -726,11 +786,12 @@ if (currentScreen === 'safetyPlanIntro') {
 
   if (currentScreen === 'safetyPlan') {
   return (
-    <SafetyPlanView
-      safetyPlan={safetyPlan}
-      onBack={() => setCurrentScreen('home')}
-      onEdit={() => setCurrentScreen('setup')}
-    />
+   <SafetyPlanView
+  safetyPlan={safetyPlan}
+  onBack={() => setCurrentScreen('home')}
+  onEdit={() => setCurrentScreen('setup')}
+  onReactivate={handleReactivateSafetyPlan}
+/>
   );
 }
 
@@ -744,17 +805,50 @@ if (currentScreen === 'safetyPlanIntro') {
           : 'Welcome to Check My Child'}
       </Text>
 
-      <Text style={styles.message}>
-        Complete your daily check-in today. If a check-in is missed, your emergency plan will begin, helping ensure your child is not left without support.
-      </Text>
+      {safetyPlan?.safetyPlanPaused === true ? (
+  <View style={styles.pausedPlanCard}>
+    <Ionicons
+      name="alert-circle-outline"
+      size={38}
+      color="#9A5A00"
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    />
+
+    <Text style={styles.pausedPlanTitle}>
+      Your Safety Plan is paused
+    </Text>
+
+    <Text style={styles.pausedPlanMessage}>
+      Three consecutive check-ins resulted in emergency alerts.
+      Please review your check-in time and trusted contact details
+      before reactivating your Safety Plan.
+    </Text>
+
+    <Text style={styles.pausedPlanWarning}>
+      No further automatic emergency SMS alerts will be sent while
+      your Safety Plan is paused.
+    </Text>
+  </View>
+) : (
+  <Text style={styles.message}>
+    Complete your daily check-in today. If a check-in is missed,
+    your emergency plan will begin, helping ensure your child is
+    not left without support.
+  </Text>
+)}
 
       <View style={styles.statusContainer}>
-        <CheckInButton onCheckIn={handleCheckIn} />
+  {safetyPlan?.safetyPlanPaused !== true && (
+    <>
+      <CheckInButton onCheckIn={handleCheckIn} />
 
-        <StatusCard
-          isProtected={isProtected}
-          lastCheckIn={lastCheckIn}
-        />
+      <StatusCard
+        isProtected={isProtected}
+        lastCheckIn={lastCheckIn}
+      />
+    </>
+  )}
 
        <View style={styles.actionButtonRow}>
   <Pressable
@@ -944,5 +1038,41 @@ logoutButtonText: {
   fontWeight: '700',
   textAlign: 'center',
   marginTop: 10,
+},
+
+pausedPlanCard: {
+  width: '100%',
+  backgroundColor: '#FFF4DE',
+  borderColor: '#E7B85C',
+  borderWidth: 1,
+  borderRadius: 18,
+  padding: 18,
+  alignItems: 'center',
+  marginBottom: 10,
+},
+
+pausedPlanTitle: {
+  color: '#7A4500',
+  fontSize: 21,
+  fontWeight: '700',
+  textAlign: 'center',
+  marginTop: 8,
+  marginBottom: 10,
+},
+
+pausedPlanMessage: {
+  color: '#5F4A2D',
+  fontSize: 16,
+  lineHeight: 22,
+  textAlign: 'center',
+},
+
+pausedPlanWarning: {
+  color: '#7A4500',
+  fontSize: 15,
+  lineHeight: 21,
+  fontWeight: '700',
+  textAlign: 'center',
+  marginTop: 12,
 },
 });

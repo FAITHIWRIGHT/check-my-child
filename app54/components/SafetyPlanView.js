@@ -1,11 +1,30 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-export default function SafetyPlanView({ safetyPlan, onBack, onEdit }) {
+export default function SafetyPlanView({
+  safetyPlan,
+  onBack,
+  onEdit,
+  onReactivate,
+}) {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
         <Text style={styles.title}>Family Safety Plan</Text>
+
+        {safetyPlan?.safetyPlanPaused === true && (
+  <View style={styles.pausedCard}>
+    <Text style={styles.pausedTitle}>
+      Safety Plan paused
+    </Text>
+
+    <Text style={styles.pausedText}>
+      Please review your usual check-in time and trusted contact
+      details below. No further automatic emergency SMS alerts
+      will be sent until you reactivate your Safety Plan.
+    </Text>
+  </View>
+)}
 
         <Text style={styles.sectionTitle}>Parent / Carer</Text>
         <Text style={styles.text}>Name: {safetyPlan.parentName}</Text>
@@ -32,6 +51,20 @@ export default function SafetyPlanView({ safetyPlan, onBack, onEdit }) {
         <Text style={styles.sectionTitle}>Trusted Contact</Text>
         <Text style={styles.text}>Name: {safetyPlan.contactName}</Text>
         <Text style={styles.text}>Phone: {safetyPlan.contactPhone}</Text>
+
+        {safetyPlan?.safetyPlanPaused === true && (
+  <Pressable
+    style={styles.reactivateButton}
+    onPress={onReactivate}
+    accessibilityRole="button"
+    accessibilityLabel="Reactivate Safety Plan"
+    accessibilityHint="Reactivates your Safety Plan after you have reviewed its details."
+  >
+    <Text style={styles.buttonText}>
+      Reactivate My Safety Plan
+    </Text>
+  </Pressable>
+)}
 <Pressable
   style={styles.button}
   onPress={onEdit}
@@ -98,6 +131,37 @@ const styles = StyleSheet.create({
     color: '#444',
     marginBottom: 5,
   },
+  pausedCard: {
+  backgroundColor: '#FFF4DE',
+  borderColor: '#E7B85C',
+  borderWidth: 1,
+  borderRadius: 14,
+  padding: 15,
+  marginBottom: 10,
+},
+
+pausedTitle: {
+  color: '#7A4500',
+  fontSize: 19,
+  fontWeight: 'bold',
+  textAlign: 'center',
+  marginBottom: 8,
+},
+
+pausedText: {
+  color: '#5F4A2D',
+  fontSize: 16,
+  lineHeight: 22,
+  textAlign: 'center',
+},
+
+reactivateButton: {
+  backgroundColor: '#0077CC',
+  paddingVertical: 14,
+  borderRadius: 12,
+  marginTop: 25,
+  alignItems: 'center',
+},
   button: {
     backgroundColor: '#2E7D32',
     paddingVertical: 14,
