@@ -1,8 +1,11 @@
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 
 export default function WelcomeScreen({ onBegin }) {
   return (
-    <View style={styles.container}>
+    <ScrollView
+  contentContainerStyle={styles.container}
+  showsVerticalScrollIndicator={false}
+>
       <Text style={styles.title}>Welcome to Check My Child 💚</Text>
       <Image
   source={require('../assets/logo.png')}
@@ -26,7 +29,7 @@ Once your Safety Plan is active, you'll receive a reminder after 1 hour if you h
 >
   <Text style={styles.buttonText}>Get Started</Text>
 </Pressable>
-</View>
+</ScrollView>
   );
 }
 
@@ -39,15 +42,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#EAF7FF',
   },
   title: {
-    fontSize: 34,
+    fontSize: 25,
     fontWeight: '900',
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: -20,
     color: '#000000',
   },
   text: {
     fontSize: 18,
-    textAlign: 'center',
+    textAlign: "justify",
     marginBottom: 20,
     color: '#444',
   },
@@ -59,10 +62,10 @@ const styles = StyleSheet.create({
 },
   button: {
     backgroundColor: '#2E7D32',
-    paddingVertical: 30,
-    paddingHorizontal: 35,
+    paddingVertical: 20,
+    paddingHorizontal: 20,
     borderRadius: 12,
-    marginTop: 20,
+    marginTop: 5,
   },
   buttonText: {
     color: 'white',
