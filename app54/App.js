@@ -409,45 +409,105 @@ export default function App() {
       }
     };
 
-  const handleSetupSave = async (
-    data
-  ) => {
-    try {
-      const currentUser =
-        auth.currentUser;
+ const handleSetupSave = async (data) => {
+  try {
+    const currentUser =
+      auth.currentUser || user;
 
-      if (!currentUser) {
-        setUser(null);
-        setSafetyPlan(null);
-        setCurrentScreen('auth');
-
-        Alert.alert(
-          'Login Required',
-          'Please log in before activating your Safety Plan.'
-        );
-        return;
-      }
-
-      setPendingSafetyPlan(data);
-
-      await AsyncStorage.setItem(
-        'pendingSafetyPlan',
-        JSON.stringify(data)
-      );
-
-      setCurrentScreen(
-        'subscription'
-      );
-    } catch (error) {
-      console.log(error);
+    if (!currentUser) {
+      setUser(null);
+      setSafetyPlan(null);
+      setCurrentScreen('auth');
 
       Alert.alert(
-        'Error',
-        error?.message ||
-          'Your Safety Plan could not be prepared for activation.'
+        'Login Required',
+        'Please log in before saving your Safety Plan.'
       );
+      return;
     }
-  };
+
+    /*
+     * Existing active subscribers can edit and save
+     * their Safety Plan without purchasing again.
+     */
+    if (
+      safetyPlan?.subscriptionActive === true
+    ) {
+      await setDoc(
+        doc(
+          db,
+          'safetyPlans',
+          currentUser.uid
+        ),
+        {
+          ...data,
+          userId: currentUser.uid,
+          updatedAt: serverTimestamp(),
+        },
+        {
+          merge: true,
+        }
+      );
+
+      const updatedPlan = {
+        ...safetyPlan,
+        ...data,
+        userId: currentUser.uid,
+      };
+
+      await AsyncStorage.setItem(
+        'safetyPlan',
+        JSON.stringify(updatedPlan)
+      );
+
+      await AsyncStorage.removeItem(
+        'pendingSafetyPlan'
+      );
+
+      setSafetyPlan(updatedPlan);
+      setPendingSafetyPlan(null);
+
+      await cancelScheduledCheckInReminders();
+
+      await scheduleDailyCheckInReminders(
+        updatedPlan
+      );
+
+      setCurrentScreen('home');
+
+      Alert.alert(
+        'Safety Plan Updated',
+        'Your Safety Plan changes have been saved.'
+      );
+
+      return;
+    }
+
+    /*
+     * A new user has not subscribed yet, so keep the
+     * completed plan pending and show the purchase screen.
+     */
+    setPendingSafetyPlan(data);
+
+    await AsyncStorage.setItem(
+      'pendingSafetyPlan',
+      JSON.stringify(data)
+    );
+
+    setCurrentScreen('subscription');
+  } catch (error) {
+    console.log(
+      'Safety Plan save error:',
+      error
+    );
+
+    Alert.alert(
+      'Save Error',
+      error?.message ||
+        'Your Safety Plan could not be saved.'
+    );
+  }
+};
 
   const activateSafetyPlanAfterPurchase =
     async (
