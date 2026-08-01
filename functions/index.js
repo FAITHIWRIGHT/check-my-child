@@ -125,7 +125,7 @@ This could mean ${parentName} and ${childName} need your help.
 Please try to contact ${parentName} first. If you cannot reach them, please go and check on ${parentName} and ${childName} as soon as possible.
 
 Emergency Plan:
-${emergencyPlan || "No emergency instructions provided."}
+${plan.emergencyPlan || "No emergency instructions provided."}
 
 No emergency services have been contacted.
 
