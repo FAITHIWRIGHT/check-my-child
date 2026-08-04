@@ -1,5 +1,9 @@
 {
   "projects": {
-    "default": "check-my-child"
-  }
+    "default": "check-my-child",
+    "production": "check-my-child",
+    "development": "check-my-child-development"
+  },
+  "targets": {},
+  "etags": {}
 }

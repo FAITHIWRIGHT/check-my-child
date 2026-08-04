@@ -114,24 +114,22 @@ exports.sendTestSafetyPlanSms = onCall(
 
       const message =
         await client.messages.create({
-          body: `TEST Check My Child Alert.
+          body: `TEST Check My Child Alert
 
 Hi ${trustedContactName},
 
-${parentName} has not completed today's check-in.
+${parentName} has chosen you as their trusted contact.
 
-This could mean ${parentName} and ${childName} need your help.
+If ${parentName} misses a daily check-in, you will be the only person contacted.
 
-Please try to contact ${parentName} first. If you cannot reach them, please go and check on ${parentName} and ${childName} as soon as possible.
+Please try to contact ${parentName}. If you cannot reach them, check on ${parentName} and ${childName} as soon as possible.
 
 Emergency Plan:
-${plan.emergencyPlan || "No emergency instructions provided."}
+${plan.emergencyPlan || "None"}
 
 No emergency services have been contacted.
 
-You are receiving this alert because you have been chosen as the trusted contact in ${parentName}'s Check My Child Safety Plan.
-
-This is a TEST alert.`,
+TEST alert.`,
           from: TWILIO_PHONE_NUMBER.value(),
           to,
         });
@@ -211,22 +209,20 @@ exports.sendEmergencySafetyPlanSms = onCall(
 
     const message =
       await client.messages.create({
-        body: `Check My Child Alert.
+        body: `Check My Child Alert
 
 Hi ${trustedContactName},
 
-${parentName} has not completed today's check-in.
+${parentName} missed today's check-in.
 
-This could mean ${parentName} and ${childName} need your help.
+You are the only trusted contact being alerted.
 
-Please try to contact ${parentName} first. If you cannot reach them, please go and check on ${parentName} and ${childName} as soon as possible.
+Please contact ${parentName}. If there is no reply, check on ${parentName} and ${childName}.
 
 Emergency Plan:
-${emergencyPlan || "No emergency instructions provided."}
+${emergencyPlan || "None"}
 
-No emergency services have been contacted.
-
-You are receiving this alert because you have been chosen as the trusted contact in ${parentName}'s Check My Child Safety Plan.`,
+Emergency services have not been contacted.`,
         from: TWILIO_PHONE_NUMBER.value(),
         to,
       });
