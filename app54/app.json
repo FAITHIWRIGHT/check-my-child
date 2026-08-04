@@ -15,14 +15,14 @@
    "ios": {
   "supportsTablet": true,
   "bundleIdentifier": "com.faithwright.checkmychild",
-  "buildNumber": "3",
+  "buildNumber": "4",
   "infoPlist": {
     "ITSAppUsesNonExemptEncryption": false
   }
 },
   "android": {
   "package": "com.faithwright.checkmychild",
-    "versionCode": 8,
+    "versionCode": 9,
   "softwareKeyboardLayoutMode": "pan",
   "adaptiveIcon": {
     "foregroundImage": "./assets/images/check-my-child-icon.png",
