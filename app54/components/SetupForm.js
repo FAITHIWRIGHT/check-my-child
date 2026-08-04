@@ -207,14 +207,14 @@ return (
   placeholderTextColor="#666666"
   value={emergencyPlan}
   onChangeText={setEmergencyPlan}
-  maxLength={500}
+  maxLength={50}
   multiline
   accessibilityLabel="Emergency Plan"
-  accessibilityHint="Enter important instructions for your trusted contact. Maximum 500 characters."
+  accessibilityHint="Enter important instructions for your trusted contact. Maximum 50 characters."
 />
 
 <Text style={styles.characterCount}>
-  {emergencyPlan.length}/500
+  {emergencyPlan.length}/50
 </Text>
 
         <TextInput

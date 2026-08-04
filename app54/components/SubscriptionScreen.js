@@ -60,7 +60,7 @@ export default function SubscriptionScreen({
         </View>
 
         <Text style={styles.price}>
-          £4.99 per month
+          £7.99 per month
         </Text>
 
         <Text style={styles.paymentText}>
