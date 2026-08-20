@@ -1,5 +1,6 @@
 import {
   ActivityIndicator,
+  Linking,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -7,6 +8,7 @@ import {
   Text,
   View,
 } from 'react-native';
+
 
 export default function SubscriptionScreen({
   onSubscribe,
@@ -16,6 +18,7 @@ export default function SubscriptionScreen({
   isRestoring = false,
 }) {
   const isBusy = isPurchasing || isRestoring;
+
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -27,46 +30,87 @@ export default function SubscriptionScreen({
           Activate My Safety Plan
         </Text>
 
+
         <Text style={styles.intro}>
           Activate your Safety Plan to begin using Check My Child’s
           safeguarding service.
         </Text>
+
 
         <View style={styles.card}>
           <Text style={styles.cardTitle}>
             Your subscription includes:
           </Text>
 
+
           <Text style={styles.item}>
             ✓ Daily “I’m OK” check-ins
           </Text>
+
 
           <Text style={styles.item}>
             ✓ Daily check-in reminder notifications
           </Text>
 
+
           <Text style={styles.item}>
             ✓ Missed check-in escalation
           </Text>
+
 
           <Text style={styles.item}>
             ✓ Automatic emergency SMS alerts to your trusted contact
             when a check-in is missed
           </Text>
 
+
           <Text style={styles.item}>
             ✓ One free Test My Safety Plan message
           </Text>
         </View>
 
+
         <Text style={styles.price}>
           £5.99 per month
         </Text>
+
 
         <Text style={styles.paymentText}>
           Payment renews automatically each month unless cancelled.
           Payment is handled securely through Apple.
         </Text>
+
+
+        <View style={styles.legalLinks}>
+          <Text
+            style={styles.legalLink}
+            onPress={() =>
+              Linking.openURL(
+                'https://www.checkmychildapp.co.uk/privacy-policy'
+              )
+            }
+            accessibilityRole="link"
+          >
+            Privacy Policy
+          </Text>
+
+          <Text style={styles.legalSeparator}>
+            •
+          </Text>
+
+          <Text
+            style={styles.legalLink}
+            onPress={() =>
+              Linking.openURL(
+                'https://www.checkmychildapp.co.uk/terms-of-use'
+              )
+            }
+            accessibilityRole="link"
+          >
+            Terms of Use
+          </Text>
+        </View>
+
 
         <Pressable
           style={({ pressed }) => [
@@ -84,6 +128,7 @@ export default function SubscriptionScreen({
             <View style={styles.loadingRow}>
               <ActivityIndicator color="#FFFFFF" />
 
+
               <Text style={styles.subscribeButtonText}>
                 Processing…
               </Text>
@@ -94,6 +139,7 @@ export default function SubscriptionScreen({
             </Text>
           )}
         </Pressable>
+
 
         <Pressable
           style={({ pressed }) => [
@@ -111,6 +157,7 @@ export default function SubscriptionScreen({
             <View style={styles.loadingRow}>
               <ActivityIndicator color="#4F9E92" />
 
+
               <Text style={styles.restoreButtonText}>
                 Restoring…
               </Text>
@@ -121,6 +168,7 @@ export default function SubscriptionScreen({
             </Text>
           )}
         </Pressable>
+
 
         <Pressable
           style={({ pressed }) => [
@@ -143,17 +191,20 @@ export default function SubscriptionScreen({
   );
 }
 
+
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#EAF7FF',
   },
 
+
   container: {
     flexGrow: 1,
     padding: 24,
     justifyContent: 'center',
   },
+
 
   title: {
     fontSize: 30,
@@ -163,6 +214,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
 
+
   intro: {
     fontSize: 17,
     lineHeight: 24,
@@ -171,12 +223,14 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
 
+
   card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 20,
     marginBottom: 24,
   },
+
 
   cardTitle: {
     fontSize: 19,
@@ -185,12 +239,14 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
 
+
   item: {
     fontSize: 16,
     lineHeight: 24,
     color: '#333',
     marginBottom: 10,
   },
+
 
   price: {
     fontSize: 26,
@@ -200,13 +256,39 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
 
+
   paymentText: {
     fontSize: 14,
     lineHeight: 20,
     textAlign: 'center',
     color: '#666',
-    marginBottom: 24,
+    marginBottom: 14,
   },
+
+
+  legalLinks: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    marginBottom: 20,
+  },
+
+
+  legalLink: {
+    color: '#4F9E92',
+    fontSize: 14,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
+  },
+
+
+  legalSeparator: {
+    color: '#666',
+    fontSize: 14,
+    marginHorizontal: 10,
+  },
+
 
   subscribeButton: {
     backgroundColor: '#4F9E92',
@@ -219,11 +301,13 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
 
+
   subscribeButtonText: {
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '700',
   },
+
 
   restoreButton: {
     paddingVertical: 14,
@@ -232,6 +316,7 @@ const styles = StyleSheet.create({
     minHeight: 50,
   },
 
+
   restoreButtonText: {
     color: '#4F9E92',
     fontSize: 16,
@@ -239,21 +324,25 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
 
+
   backButton: {
     paddingVertical: 14,
     alignItems: 'center',
   },
+
 
   backButtonText: {
     color: '#555',
     fontSize: 15,
   },
 
+
   loadingRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
   },
+
 
   buttonPressed: {
     opacity: 0.65,
