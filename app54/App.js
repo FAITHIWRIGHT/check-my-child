@@ -2,10 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { StatusBar } from 'expo-status-bar';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { deleteUser, onAuthStateChanged, signOut } from 'firebase/auth';
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -810,7 +811,122 @@ export default function App() {
       );
     }
   };
+  const handleDeleteAccount = async () => {
+    Alert.alert(
+      'Delete Account',
+      'Are you sure you want to permanently delete your account? Your Safety Plan and check-in history will be deleted and this cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete Account',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const currentUser =
+                auth.currentUser || user;
 
+              if (!currentUser) {
+                Alert.alert(
+                  'Account Not Found',
+                  'Please sign in again before deleting your account.'
+                );
+                setCurrentScreen('auth');
+                return;
+              }
+
+              const checkInQuery = query(
+                collection(db, 'checkIns'),
+                where(
+                  'userId',
+                  '==',
+                  currentUser.uid
+                )
+              );
+
+              const checkInSnapshot =
+                await getDocs(checkInQuery);
+
+              for (
+                const checkInDocument of
+                  checkInSnapshot.docs
+              ) {
+                await deleteDoc(
+                  doc(
+                    db,
+                    'checkIns',
+                    checkInDocument.id
+                  )
+                );
+              }
+
+              await deleteDoc(
+                doc(
+                  db,
+                  'safetyPlans',
+                  currentUser.uid
+                )
+              );
+
+              await deleteUser(
+                currentUser
+              );
+
+              await cancelScheduledCheckInReminders();
+
+              await AsyncStorage.removeItem(
+                'safetyPlan'
+              );
+              await AsyncStorage.removeItem(
+                'hasCompletedSetup'
+              );
+              await AsyncStorage.removeItem(
+                'pendingSafetyPlan'
+              );
+
+              setUser(null);
+              setSafetyPlan(null);
+              setPendingSafetyPlan(null);
+              setIsProtected(false);
+              setLastCheckIn(
+                'Not checked in yet'
+              );
+              setCurrentScreen('auth');
+
+              Alert.alert(
+                'Account Deleted',
+                'Your Check My Child account and associated app data have been permanently deleted.'
+              );
+            } catch (error) {
+              console.log(
+                'Delete account error:',
+                error
+              );
+
+              if (
+                error?.code ===
+                'auth/requires-recent-login'
+              ) {
+                Alert.alert(
+                  'Please Sign In Again',
+                  'For security, please log out and sign back in, then choose Delete Account again.'
+                );
+                return;
+              }
+
+              Alert.alert(
+                'Account Deletion Error',
+                error?.message ||
+                  'Your account could not be deleted. Please try again.'
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
   const resetApp = async () => {
     await AsyncStorage.removeItem(
       'safetyPlan'
@@ -1379,6 +1495,33 @@ export default function App() {
             </Text>
           </Pressable>
         </View>
+         <Pressable
+          style={({ pressed }) => [
+            styles.deleteAccountButton,
+            pressed &&
+              styles.actionButtonPressed,
+          ]}
+          onPress={handleDeleteAccount}
+          accessibilityRole="button"
+          accessibilityLabel="Delete Account"
+          accessibilityHint="Permanently deletes your Check My Child account and associated app data."
+        >
+          <Ionicons
+            name="trash-outline"
+            size={22}
+            color="#B42318"
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          />
+
+          <Text
+            style={
+              styles.deleteAccountButtonText
+            }
+          >
+            Delete Account
+          </Text>
+        </Pressable>
       </View>
 
       <StatusBar style="auto" />
@@ -1498,11 +1641,38 @@ const styles = StyleSheet.create({
   },
 
   logoutButtonText: {
+
     color: '#5D6670',
+
     fontSize: 15,
+
     lineHeight: 20,
+
+    fontWeight: '700',
+
+    textAlign: 'center',
+
+    marginTop: 10,
+
+  },
+
+  deleteAccountButton: {
+    marginTop: 18,
+    minHeight: 48,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+
+  deleteAccountButtonText: {
+    color: '#B42318',
+    fontSize: 15,
     fontWeight: '700',
     textAlign: 'center',
-    marginTop: 10,
   },
+
 });
