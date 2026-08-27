@@ -125,7 +125,7 @@ If ${parentName} misses a daily check-in, you will be the only person contacted.
 Please try to contact ${parentName}. If you cannot reach them, check on ${parentName} and ${childName} as soon as possible.
 
 Emergency Plan:
-${plan.emergencyPlan || "None"}
+${emergencyPlan || "None"}
 
 No emergency services have been contacted.
 

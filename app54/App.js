@@ -115,63 +115,168 @@ export default function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  const loadSafetyPlanForUser = async (
-    signedInUser
-  ) => {
-    try {
-      const uidPlanRef = doc(
-        db,
-        'safetyPlans',
+const loadSafetyPlanForUser = async (
+  signedInUser
+) => {
+  try {
+    const uidPlanRef = doc(
+      db,
+      'safetyPlans',
+      signedInUser.uid
+    );
+
+    const uidPlanSnapshot =
+      await getDoc(uidPlanRef);
+
+    if (uidPlanSnapshot.exists()) {
+      const planData =
+        uidPlanSnapshot.data();
+
+      /*
+       * The Safety Plan exists, but we must also
+       * confirm that the user's RevenueCat
+       * subscription is still active.
+       */
+      await Purchases.logIn(
         signedInUser.uid
       );
 
-      const uidPlanSnapshot =
-        await getDoc(uidPlanRef);
+      const customerInfo =
+        await Purchases.getCustomerInfo();
 
-      if (uidPlanSnapshot.exists()) {
-        const planData =
-          uidPlanSnapshot.data();
+      const hasActiveEntitlement =
+        Boolean(
+          customerInfo?.entitlements?.active?.[
+            REVENUECAT_ENTITLEMENT_ID
+          ]
+        );
 
-        setSafetyPlan(planData);
+      setSafetyPlan(planData);
+
+      await AsyncStorage.setItem(
+        'safetyPlan',
+        JSON.stringify(planData)
+      );
+
+      await AsyncStorage.setItem(
+        'hasCompletedSetup',
+        'true'
+      );
+
+      if (!hasActiveEntitlement) {
+        /*
+         * Keep the Safety Plan stored, but don't
+         * allow the safeguarding service to remain
+         * active without a subscription.
+         */
+        await setDoc(
+          uidPlanRef,
+          {
+            subscriptionActive: false,
+            escalationEnabled: false,
+            subscriptionVerifiedAt:
+              serverTimestamp(),
+          },
+          { merge: true }
+        );
+
+        const inactivePlan = {
+          ...planData,
+          subscriptionActive: false,
+          escalationEnabled: false,
+        };
+
+        setSafetyPlan(inactivePlan);
+        setPendingSafetyPlan(inactivePlan);
 
         await AsyncStorage.setItem(
           'safetyPlan',
-          JSON.stringify(planData)
+          JSON.stringify(inactivePlan)
         );
 
         await AsyncStorage.setItem(
-          'hasCompletedSetup',
-          'true'
+          'pendingSafetyPlan',
+          JSON.stringify(inactivePlan)
         );
 
-        setCurrentScreen('home');
-      } else {
-        setSafetyPlan(null);
+        await cancelScheduledCheckInReminders();
 
-        await AsyncStorage.removeItem(
-          'safetyPlan'
-        );
-        await AsyncStorage.removeItem(
-          'hasCompletedSetup'
-        );
-
-        setCurrentScreen('safetyPlanIntro');
+        setCurrentScreen('subscription');
+        return;
       }
-    } catch (error) {
-      console.log(
-        'Load Safety Plan error:',
-        error
+
+      /*
+       * RevenueCat confirms that the subscription
+       * is active.
+       */
+      if (
+        planData.subscriptionActive !== true ||
+        planData.escalationEnabled !== true
+      ) {
+        await setDoc(
+          uidPlanRef,
+          {
+            subscriptionActive: true,
+            escalationEnabled: true,
+            subscriptionVerifiedAt:
+              serverTimestamp(),
+          },
+          { merge: true }
+        );
+      }
+
+      const activePlan = {
+        ...planData,
+        subscriptionActive: true,
+        escalationEnabled: true,
+      };
+
+      setSafetyPlan(activePlan);
+
+      await AsyncStorage.setItem(
+        'safetyPlan',
+        JSON.stringify(activePlan)
       );
 
-      Alert.alert(
-        'Load Error',
-        error?.message ||
-          'Your Safety Plan could not be loaded.'
+      await AsyncStorage.removeItem(
+        'pendingSafetyPlan'
       );
 
+      setPendingSafetyPlan(null);
+      setCurrentScreen('home');
+    } else {
+      setSafetyPlan(null);
+
+      await AsyncStorage.removeItem(
+        'safetyPlan'
+      );
+
+      await AsyncStorage.removeItem(
+        'hasCompletedSetup'
+      );
+
+      await AsyncStorage.removeItem(
+        'pendingSafetyPlan'
+      );
+
+      setPendingSafetyPlan(null);
       setCurrentScreen('safetyPlanIntro');
     }
-  };
+  } catch (error) {
+    console.log(
+      'Load Safety Plan error:',
+      error
+    );
+
+    Alert.alert(
+      'Load Error',
+      error?.message ||
+        'Your Safety Plan could not be loaded.'
+    );
+
+    setCurrentScreen('safetyPlanIntro');
+  }
+};
 
   const loadTodayCheckInForUser = async (
     signedInUser

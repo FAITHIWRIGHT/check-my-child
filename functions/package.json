@@ -13,6 +13,7 @@
   },
   "main": "index.js",
   "dependencies": {
+    "expo-dev-client": "~56.0.25",
     "firebase-admin": "^13.6.0",
     "firebase-functions": "^7.0.0",
     "luxon": "^3.7.2",

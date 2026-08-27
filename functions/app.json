@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "54316b08-de04-4402-b160-98e01a7f45e6"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.faithiwright.functions",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    }
+  }
+}
