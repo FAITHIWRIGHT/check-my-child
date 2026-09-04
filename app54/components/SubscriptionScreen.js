@@ -1,6 +1,7 @@
 import {
   ActivityIndicator,
   Linking,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -18,6 +19,9 @@ export default function SubscriptionScreen({
   isRestoring = false,
 }) {
   const isBusy = isPurchasing || isRestoring;
+
+  const paymentProvider =
+    Platform.OS === 'ios' ? 'Apple' : 'Google Play';
 
 
   return (
@@ -77,7 +81,7 @@ export default function SubscriptionScreen({
 
         <Text style={styles.paymentText}>
           Payment renews automatically each month unless cancelled.
-          Payment is handled securely through Apple.
+          Payment is handled securely through {paymentProvider}.
         </Text>
 
 
@@ -121,7 +125,7 @@ export default function SubscriptionScreen({
           disabled={isBusy}
           accessibilityRole="button"
           accessibilityLabel="Subscribe and activate Safety Plan"
-          accessibilityHint="Opens Apple’s subscription purchase screen."
+          accessibilityHint={`Opens ${paymentProvider}’s subscription purchase screen.`}
           accessibilityState={{ disabled: isBusy }}
         >
           {isPurchasing ? (
@@ -150,7 +154,7 @@ export default function SubscriptionScreen({
           disabled={isBusy}
           accessibilityRole="button"
           accessibilityLabel="Restore purchases"
-          accessibilityHint="Checks Apple for a previous Check My Child subscription."
+          accessibilityHint={`Checks ${paymentProvider} for a previous Check My Child subscription.`}
           accessibilityState={{ disabled: isBusy }}
         >
           {isRestoring ? (
